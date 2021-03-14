@@ -1,0 +1,53 @@
+version: '3'
+services:
+  selenium-standalone:
+    depends_on:
+      - pdadmin
+      - db
+      - rabbitmq
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        CONTAINER_USER_ID: ${CONTAINER_USER_ID}
+        CONTAINER_GROUP_ID: ${CONTAINER_GROUP_ID}
+    ports:
+      - "5900:5900" # VNC　defualtはsecretでログイン
+      - "80:80"
+      - "8080:8080"  # restapi
+      - "8888:8888"  # jupyter
+      - "8501:8501"  # streamlit
+      - "2222:22" # SSH
+      - "5678:5678" # pydebug
+    volumes:
+      - .:/app:rw
+
+  pdadmin:
+    image: dpage/pgadmin4
+    depends_on:
+      - db
+    env_file:
+      - .env
+    ports:
+    - "5050:5050"
+
+  db:
+    image: postgres:12
+    # volumes:
+    #     - app-db-data:/var/lib/postgresql/data/pgdata
+    env_file:
+      - .env
+    # environment:
+    #     - PGDATA=/var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+
+  # volumes:
+  #   app-db-data:
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - 5672:5672  # queue port
+      - 15672:15672  #rabbitmq management console guest:guest
+  # sudo apt install rabbitmq-server

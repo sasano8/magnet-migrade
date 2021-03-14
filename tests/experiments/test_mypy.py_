@@ -1,0 +1,39 @@
+# python3 -m mypy tests/experiments/test_mypy.py_
+
+# LINQの問題点
+
+# 継承の問題
+# Linq(self)でメソッドチェーンをしているが、継承クラスで継承が失われてしまう
+# self.__class__を参照したいが、拡張メソッドを意識しているので、selfを利用できない
+# 名前空間に、__class__属性(self不要)があるが、それも継承先から呼び出すと、継承元にバインドされている
+
+# 現在、思いついているアイデア
+# import callee_file で呼び出し元クラスを取得する
+
+
+from __future__ import annotations
+
+import typing as t
+from typing import Iterable, Union, _T_co, cast
+
+
+class Linq(Iterable[_T_co]):
+    def __init__(self, value: t.Iterable[_T_co]) -> None:
+        self.__root__ = value
+
+    def __iter__(self) -> t.Iterator[_T_co]:
+        pass
+
+    def filter(self: Iterable[_T_co]) -> Linq[_T_co]:
+        return Linq(self)
+
+
+class Linq2(Linq[_T_co]):
+    pass
+
+
+filter_1 = Linq([""]).filter()  # OK
+filter_2 = Linq.filter([1])  # NG linq[Any]が返る
+
+filter_3 = Linq2([""]).filter()  # OK
+filter_4 = Linq2.filter([1])  # OK なぜ？？？
