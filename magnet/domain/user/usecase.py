@@ -5,7 +5,6 @@ from jwt import PyJWTError
 from pydantic import SecretStr, ValidationError, validator
 from pydantic.fields import Field
 from sqlalchemy.orm.session import Session
-from starlette.status import HTTP_401_UNAUTHORIZED
 
 from ...commons import BaseModel, dataclass
 from ...database import get_db
@@ -111,7 +110,8 @@ async def get_current_admin_user(
 ) -> User:
     if not current_user.is_admin:
         raise HTTPException(
-            status_code=400, detail="The user doesn't have enough privileges"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The user doesn't have enough privileges",
         )
     return current_user
 
@@ -123,7 +123,8 @@ class _UserRoleFilter:
     def __call__(self, user: User = Depends(get_current_user)):
         if user.role not in self.roles:
             raise HTTPException(
-                status_code=400, detail="The user doesn't have enough privileges"
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="The user doesn't have enough privileges",
             )
         return user
 
@@ -178,11 +179,11 @@ async def logout_user(
         token.create(db)
     # TODO: 何を返せばいいのかよく分からない
     # TODO: そもそもフロントエンド側のログアウトはトークンを破棄すればよいのでログアウト処理自体いらない
-    return HTTPException(status_code=HTTP_401_UNAUTHORIZED)
+    return HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
 
 
 @dataclass
-class ModifiPassword:
+class ModifyPassword:
     password: SecretStr
 
     @validator("password", pre=True, always=True)
@@ -199,12 +200,12 @@ class ModifiPassword:
 
 
 @dataclass
-class RegisterFirstAdmin(BaseModel, ModifiPassword):
+class RegisterFirstAdmin(BaseModel, ModifyPassword):
     email: str
     password: SecretStr
 
     def do(self, db: Session):
-        if user := db.query(db).first():
+        if user := db.query(User).first():
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Application is initialized.",
@@ -220,7 +221,7 @@ class RegisterFirstAdmin(BaseModel, ModifiPassword):
 
 
 @dataclass
-class RegisterUser(BaseModel, ModifiPassword):
+class RegisterUser(BaseModel, ModifyPassword):
     email: str
     password: SecretStr
 
@@ -242,7 +243,7 @@ class RegisterUser(BaseModel, ModifiPassword):
 
 
 @dataclass
-class ModifyUserPassword(BaseModel, ModifiPassword):
+class ModifyUserPassword(BaseModel, ModifyPassword):
     user_id: int
     password: SecretStr
 
