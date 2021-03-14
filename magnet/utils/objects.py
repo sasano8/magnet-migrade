@@ -1,4 +1,3 @@
-import typing
 from functools import lru_cache
 from typing import (
     TYPE_CHECKING,
@@ -19,7 +18,7 @@ from typing import (
 
 from fastapi import HTTPException, status
 from pydantic import BaseModel
-from sqlalchemy import or_
+from sqlalchemy import inspect, or_
 from sqlalchemy.orm import Query, Session, load_only, make_transient
 
 from framework import undefined
@@ -403,17 +402,19 @@ class Entity:
     def create(self, db: Session):
         """インスタンスを作成し、フラッシュする。idなどが発行されるが、コミットまで状態は確定していない。"""
         db.add(self)
-        db.flush
+        db.flush()
         return self
 
     def update(self, db: Session, **update):
-        """インスタンスを更新し、フラッシュする。コミットまで状態は確定していない。"""
+        """インスタンスを更新し、他オブジェクトも含む変更をデータベースにフラッシュする。コミットまで状態は確定しない。"""
+        if inspect(self).transient:
+            raise Exception("セッションに参加していないオブジェクトに対して更新を行うことはできません")
         [setattr(self, k, v) for k, v in update.items()]  # type: ignore
         db.flush()
         return self
 
     def delete(self, db: Session) -> Literal[1]:
-        """インスタンスを削除し、フラッシュする。コミットまで状態は確定していない。"""
+        """インスタンスを削除し、他オブジェクトも含む変更をデータベースにフラッシュする。コミットまで状態は確定しない。"""
         db.delete(self)
         db.flush()
         return 1
