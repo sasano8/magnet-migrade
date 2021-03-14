@@ -86,7 +86,7 @@ async def modify_password_me(
     db: Session = Depends(get_db),
     current_user: User = Security(get_current_active_user, scopes=["me"]),
     *,
-    data: uc.ModifiPassword,
+    data: uc.ModifyPassword,
 ) -> int:
     action = uc.ModifyUserPassword(user_id=current_user.id, password=data.password)
     return action.do(db)
@@ -113,7 +113,7 @@ async def get_me_if_admin_or_power(
 
 
 @user_router.get("/", response_model=List[schemas.User])
-async def index_user(
+async def query_user(
     db: Session = Depends(get_db),
     current_user: User = FilterRole(UserRoles.admin, UserRoles.poweruser),
     *,

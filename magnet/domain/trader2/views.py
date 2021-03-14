@@ -23,7 +23,7 @@ async def index_account(
     *,
     q: PagenationQuery,
 ):
-    query = uc.AccountIndex(user_id=user_id).query(db)
+    query = uc.IndexAccount(user_id=user_id).query(db)
     return query.limit(q.limit).offset(q.skip).all()
 
 
@@ -32,9 +32,9 @@ async def create_account(
     user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db),
     *,
-    data: uc.AccountCreate.prefab(exclude={"user_id"}),
+    data: uc.CreateAccount.prefab(exclude={"user_id"}),
 ):
-    action = uc.AccountCreate(user_id=user_id, **data.dict())
+    action = uc.CreateAccount(user_id=user_id, **data.dict())
     return action.do(db)
 
 
@@ -45,7 +45,7 @@ async def get_account(
     *,
     id: int,
 ):
-    action = uc.AccountGet(id=id, user_id=user_id)
+    action = uc.GetAccount(id=id, user_id=user_id)
     return action.do(db)
 
 
@@ -57,7 +57,7 @@ async def delete_account(
     *,
     id: int,
 ):
-    action = uc.AccountDelete(id=id, user_id=user_id)
+    action = uc.DeleteAccount(id=id, user_id=user_id)
     return action.do(db)
 
 
@@ -67,9 +67,9 @@ async def patch_account(
     db: Session = Depends(get_db),
     *,
     id: int,
-    data: uc.AccountPatch.prefab(exclude={"id", "user_id"}),
+    data: uc.PatchAccount.prefab(exclude={"id", "user_id"}),
 ):
-    action = uc.AccountPatch(user_id=user_id, id=id, **data.dict(exclude_unset=True))
+    action = uc.PatchAccount(user_id=user_id, id=id, **data.dict(exclude_unset=True))
     return action.do(db)
 
 
@@ -88,27 +88,6 @@ async def create_virtual_account(
 
 
 @router.get(
-    "/account/{account_id}/virtual_account",
-    response_model=List[schemas.TradeVirtualAccount],
-    description="物理口座に紐づく仮想口座を表示する",
-)
-async def index_virtual_account_in_account(
-    user_id: int = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
-    *,
-    account_id: int,
-    q: PagenationQuery,
-):
-    query = uc.VirtualAccountIndex(user_id=user_id).query(db)
-    return (
-        query.filter(models.TradeVirtualAccount.id == account_id)
-        .limit(q.limit)
-        .offset(q.skip)
-        .all()
-    )
-
-
-@router.get(
     "/virtual_account",
     response_model=List[schemas.TradeVirtualAccount],
     description="ユーザーに紐づく仮想口座を表示する",
@@ -117,9 +96,13 @@ async def index_virtual_account(
     user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db),
     *,
+    account_id: int = None,
     q: PagenationQuery,
 ):
-    query = uc.VirtualAccountIndex(user_id=user_id).query(db)
+    query = uc.IndexVirtualAccount(user_id=user_id).query(db)
+    if account_id is not None:
+        query.filter(models.TradeVirtualAccount.id == account_id)
+
     return query.limit(q.limit).offset(q.skip).all()
 
 
@@ -130,7 +113,7 @@ async def get_virtual_account(
     *,
     id: int,
 ):
-    action = uc.VirtualAccountGet(user_id=user_id, id=id)
+    action = uc.GetVirtualAccount(user_id=user_id, id=id)
     return action.do(db)
 
 
@@ -141,7 +124,7 @@ async def delete_virtual_account(
     *,
     id: int,
 ):
-    action = uc.VirtualAccountDelete(user_id=user_id, id=id)
+    action = uc.DeleteVirtualAccount(user_id=user_id, id=id)
     return action.do(db)
 
 
@@ -151,9 +134,9 @@ async def patch_virtual_account(
     db: Session = Depends(get_db),
     *,
     id: int,
-    data: uc.VirtualAccountPatch.prefab(exclude={"id", "user_id"}),
+    data: uc.PatchVirtualAccount.prefab(exclude={"id", "user_id"}),
 ):
-    action = uc.VirtualAccountPatch(
+    action = uc.PatchVirtualAccount(
         id=id, user_id=user_id, **data.dict(exclude_unset=True)
     )
     return action.do(db)
@@ -169,7 +152,7 @@ async def index_order(
     *,
     q: PagenationQuery,
 ):
-    query = uc.OrderIndex(user_id=user_id).query(db)
+    query = uc.IndexOrder(user_id=user_id).query(db)
     return query.limit(q.limit).offset(q.skip).all()
 
 

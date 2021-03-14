@@ -17,7 +17,7 @@ from .models import TradeAccount, TradePosition, TradeVirtualAccount
 
 
 @dataclass
-class AccountCreate(BaseModel):
+class CreateAccount(BaseModel):
     user_id: int
     name: str = ""
     version: int = 0
@@ -34,7 +34,7 @@ class AccountCreate(BaseModel):
 
 
 @dataclass
-class AccountIndex(BaseModel):
+class IndexAccount(BaseModel):
     user_id: int
 
     def query(self, db: Session) -> "Query[TradeAccount]":
@@ -42,7 +42,7 @@ class AccountIndex(BaseModel):
 
 
 @dataclass
-class AccountGet(BaseModel):
+class GetAccount(BaseModel):
     id: int
     user_id: int
 
@@ -55,17 +55,17 @@ class AccountGet(BaseModel):
 
 
 @dataclass
-class AccountDelete(BaseModel):
+class DeleteAccount(BaseModel):
     id: int
     user_id: int
 
     def do(self, db: Session) -> int:
-        account = AccountGet(**self.dict()).do(db)
+        account = GetAccount(**self.dict()).do(db)
         return account.delete(db)
 
 
 @dataclass
-class AccountPatch(BaseModel):
+class PatchAccount(BaseModel):
     id: int
     user_id: int
     version: int = 0
@@ -76,13 +76,13 @@ class AccountPatch(BaseModel):
     margin: Decimal = Field(0, ge=0, description="証拠金（資金）")
 
     def do(self, db: Session) -> TradeAccount:
-        account = AccountGet(id=self.id, user_id=self.user_id).do(db)
+        account = GetAccount(id=self.id, user_id=self.user_id).do(db)
         account.update(db, **self.dict(exclude_unset=True))
         return account
 
 
 @dataclass
-class VirtualAccountIndex(BaseModel):
+class IndexVirtualAccount(BaseModel):
     user_id: int
 
     def query(self, db: Session) -> "Query[TradeVirtualAccount]":
@@ -92,7 +92,7 @@ class VirtualAccountIndex(BaseModel):
 
 
 @dataclass
-class VirtualAccountGet(BaseModel):
+class GetVirtualAccount(BaseModel):
     user_id: int
     id: int
 
@@ -105,12 +105,12 @@ class VirtualAccountGet(BaseModel):
 
 
 @dataclass
-class VirtualAccountDelete(BaseModel):
+class DeleteVirtualAccount(BaseModel):
     user_id: int
     id: int
 
     def do(self, db: Session) -> int:
-        v_account = VirtualAccountGet(**self.dict()).do(db)
+        v_account = GetVirtualAccount(**self.dict()).do(db)
         return v_account.delete(db)
 
 
@@ -146,7 +146,7 @@ class VirtualAccountCreate(BaseModel):
 
 
 @dataclass
-class VirtualAccountPatch(BaseModel):
+class PatchVirtualAccount(BaseModel):
     id: int
     user_id: int
     # account_id: int
@@ -163,12 +163,12 @@ class VirtualAccountPatch(BaseModel):
     bid_loss_rate: Decimal = Field(None, ge=0)
 
     def do(self, db: Session) -> TradeVirtualAccount:
-        account = VirtualAccountGet(id=self.id, user_id=self.user_id).do(db)
+        account = GetVirtualAccount(id=self.id, user_id=self.user_id).do(db)
         return account.update(db, **self.dict(exclude_unset=True))
 
 
 @dataclass
-class OrderIndex(BaseModel):
+class IndexOrder(BaseModel):
     user_id: int
 
     def query(self, db: Session) -> "Query[TradePosition]":
@@ -176,13 +176,13 @@ class OrderIndex(BaseModel):
 
 
 @dataclass
-class OrderGet(BaseModel):
+class GetOrder(BaseModel):
     id: int
     user_id: int
 
 
 @dataclass
-class OrderCreate(BaseModel):
+class CreateOrder(BaseModel):
     """
     注文を予約する。apiプロバイダへの発注は別ワーカーが処理し、随時ステータスを更新する。
     監視中の注文は、VirtualAccount.latest_order_idに格納される。
@@ -241,7 +241,7 @@ class OrderCreate(BaseModel):
         テストなど限定的な箇所で高速化を図るために使用してよい。
         """
         order = TradePosition(**self.dict(), is_entry=self.is_entry).create(db)
-        vaccount = VirtualAccountOnOrderUpdated(
+        vaccount = PatchVirtualAccountOnOrderUpdated(
             order_id=order.id,
             user_id=order.user_id,
             trade_virtual_account_id=order.trade_virtual_account_id,
@@ -250,7 +250,7 @@ class OrderCreate(BaseModel):
 
 
 @dataclass
-class OrderRequested(BaseModel):
+class PatchOrderStatusOnRequested(BaseModel):
     """apiプロバイダに発注し、リクエストが受理された時に呼び出す"""
 
     id: int
@@ -264,7 +264,7 @@ class OrderRequested(BaseModel):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
         order.update(db, **self.dict())
 
-        vaccount = VirtualAccountOnOrderUpdated(
+        vaccount = PatchVirtualAccountOnOrderUpdated(
             order_id=order.id,
             user_id=order.user_id,
             trade_virtual_account_id=order.trade_virtual_account_id,
@@ -273,7 +273,7 @@ class OrderRequested(BaseModel):
 
 
 @dataclass
-class OrderContracted(BaseModel):
+class PatchOrderStatusOnContracted(BaseModel):
     """apiプロバイダから全注文約定が確認できた時に呼び出す"""
 
     id: int
@@ -298,7 +298,7 @@ class OrderContracted(BaseModel):
 
         order.update(db, **self.dict())
 
-        vaccount = VirtualAccountOnOrderUpdated(
+        vaccount = PatchVirtualAccountOnOrderUpdated(
             order_id=order.id,
             user_id=order.user_id,
             trade_virtual_account_id=order.trade_virtual_account_id,
@@ -308,7 +308,7 @@ class OrderContracted(BaseModel):
 
 
 @dataclass
-class VirtualAccountOnOrderUpdated(BaseModel):
+class PatchVirtualAccountOnOrderUpdated(BaseModel):
     """注文更新時に注文と仮想口座との整合性を検証し、仮想口座の最新の注文を更新する"""
 
     order_id: int
