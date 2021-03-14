@@ -24,7 +24,7 @@ class User(Base, TimeStampMixin):
     username = sa.Column(sa.String, unique=True, index=True)
     hashed_password = sa.Column(sa.String)
     email = sa.Column(sa.String, unique=True, index=True)
-    full_name = sa.Column(sa.String)
+    full_name = sa.Column(sa.String, nullable=False, default="")
     role = sa.Column(sa.String, nullable=False, default=UserRoles.user)
     disabled = sa.Column(sa.Boolean, default=False)
     is_active = sa.Column(sa.Boolean, default=True)
@@ -58,7 +58,6 @@ class Item(Base):
 
 class DenyToken(Base):
     __tablename__ = "deny_tokens"
-
     id = sa.Column(sa.Integer, primary_key=True)
     token = sa.Column(sa.String(255), unique=True)
     user_name = sa.Column(sa.String(255))
