@@ -6,7 +6,7 @@ from pydantic import SecretStr, ValidationError, validator
 from pydantic.fields import Field
 from sqlalchemy.orm.session import Session
 
-from ...commons import BaseModel, dataclass
+from ...commons import BaseModel, intellisense
 from ...database import get_db
 from .models import DenyToken, User, UserRoles
 from .schemas import Token, TokenData
@@ -135,7 +135,7 @@ def FilterRole(*args: UserRoles) -> Any:
     return Depends(obj)
 
 
-@dataclass
+@intellisense
 class TryLogin(BaseModel):
     user_name: str
     password: str
@@ -182,8 +182,8 @@ async def logout_user(
     return HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
 
 
-@dataclass
-class ModifyPassword:
+@intellisense
+class ModifyPassword(BaseModel):
     password: SecretStr
 
     @validator("password", pre=True, always=True)
@@ -199,8 +199,8 @@ class ModifyPassword:
         return hashed_password
 
 
-@dataclass
-class RegisterFirstAdmin(BaseModel, ModifyPassword):
+@intellisense
+class RegisterFirstAdmin(ModifyPassword):
     email: str
     password: SecretStr
 
@@ -220,8 +220,8 @@ class RegisterFirstAdmin(BaseModel, ModifyPassword):
         return user.create(db)
 
 
-@dataclass
-class RegisterUser(BaseModel, ModifyPassword):
+@intellisense
+class RegisterUser(ModifyPassword):
     email: str
     password: SecretStr
 
@@ -242,8 +242,8 @@ class RegisterUser(BaseModel, ModifyPassword):
         return user.create(db)
 
 
-@dataclass
-class ModifyUserPassword(BaseModel, ModifyPassword):
+@intellisense
+class ModifyUserPassword(ModifyPassword):
     user_id: int
     password: SecretStr
 
@@ -251,13 +251,13 @@ class ModifyUserPassword(BaseModel, ModifyPassword):
         raise NotImplementedError()
 
 
-@dataclass
+@intellisense
 class IndexUser(BaseModel):
     def query(self, db: Session):
         return db.query(User)
 
 
-@dataclass
+@intellisense
 class GetUser(BaseModel):
     id: int
 
@@ -267,7 +267,7 @@ class GetUser(BaseModel):
         return user
 
 
-@dataclass
+@intellisense
 class DeleteUser(BaseModel):
     id: int
 

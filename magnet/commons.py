@@ -7,7 +7,7 @@ from pandemic import Unpack
 from .utils.objects import Service
 
 if TYPE_CHECKING:
-    pass
+    from dataclasses import dataclass as intellisense
 else:
     origin_dataclass = dataclass
     from pydantic import BaseModel as M
@@ -18,6 +18,9 @@ else:
             return cls
         else:
             return origin_dataclass(cls)
+
+    def intellisense(cls):
+        return cls
 
 
 class BaseModel(Model):

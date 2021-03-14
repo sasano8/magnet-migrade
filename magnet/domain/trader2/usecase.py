@@ -11,12 +11,12 @@ from libs.pydantic.models import BaseModel
 from magnet.domain.user.models import User
 from pytrade.portfolio import AskBid, PositionStatus, VirtualAccount
 
-from ...commons import dataclass
+from ...commons import intellisense
 from ...database import Session
 from .models import TradeAccount, TradePosition, TradeVirtualAccount
 
 
-@dataclass
+@intellisense
 class CreateAccount(BaseModel):
     user_id: int
     name: str = ""
@@ -33,7 +33,7 @@ class CreateAccount(BaseModel):
         return obj.create(db)
 
 
-@dataclass
+@intellisense
 class IndexAccount(BaseModel):
     user_id: int
 
@@ -41,7 +41,7 @@ class IndexAccount(BaseModel):
         return db.query(TradeAccount).filter(TradeAccount.user_id == self.user_id)
 
 
-@dataclass
+@intellisense
 class GetAccount(BaseModel):
     id: int
     user_id: int
@@ -54,7 +54,7 @@ class GetAccount(BaseModel):
         return account
 
 
-@dataclass
+@intellisense
 class DeleteAccount(BaseModel):
     id: int
     user_id: int
@@ -64,7 +64,7 @@ class DeleteAccount(BaseModel):
         return account.delete(db)
 
 
-@dataclass
+@intellisense
 class PatchAccount(BaseModel):
     id: int
     user_id: int
@@ -81,7 +81,7 @@ class PatchAccount(BaseModel):
         return account
 
 
-@dataclass
+@intellisense
 class IndexVirtualAccount(BaseModel):
     user_id: int
 
@@ -91,7 +91,7 @@ class IndexVirtualAccount(BaseModel):
         )
 
 
-@dataclass
+@intellisense
 class GetVirtualAccount(BaseModel):
     user_id: int
     id: int
@@ -104,7 +104,7 @@ class GetVirtualAccount(BaseModel):
         return account
 
 
-@dataclass
+@intellisense
 class DeleteVirtualAccount(BaseModel):
     user_id: int
     id: int
@@ -114,7 +114,7 @@ class DeleteVirtualAccount(BaseModel):
         return v_account.delete(db)
 
 
-@dataclass
+@intellisense
 class VirtualAccountCreate(BaseModel):
     user_id: int
     account_id: int
@@ -145,7 +145,7 @@ class VirtualAccountCreate(BaseModel):
         return obj.create(db)
 
 
-@dataclass
+@intellisense
 class PatchVirtualAccount(BaseModel):
     id: int
     user_id: int
@@ -167,7 +167,7 @@ class PatchVirtualAccount(BaseModel):
         return account.update(db, **self.dict(exclude_unset=True))
 
 
-@dataclass
+@intellisense
 class IndexOrder(BaseModel):
     user_id: int
 
@@ -175,13 +175,13 @@ class IndexOrder(BaseModel):
         return db.query(TradePosition).filter(TradePosition.user_id == self.user_id)
 
 
-@dataclass
+@intellisense
 class GetOrder(BaseModel):
     id: int
     user_id: int
 
 
-@dataclass
+@intellisense
 class CreateOrder(BaseModel):
     """
     注文を予約する。apiプロバイダへの発注は別ワーカーが処理し、随時ステータスを更新する。
@@ -249,7 +249,7 @@ class CreateOrder(BaseModel):
         return order, vaccount
 
 
-@dataclass
+@intellisense
 class PatchOrderStatusOnRequested(BaseModel):
     """apiプロバイダに発注し、リクエストが受理された時に呼び出す"""
 
@@ -272,7 +272,7 @@ class PatchOrderStatusOnRequested(BaseModel):
         return order, vaccount
 
 
-@dataclass
+@intellisense
 class PatchOrderStatusOnContracted(BaseModel):
     """apiプロバイダから全注文約定が確認できた時に呼び出す"""
 
@@ -307,7 +307,7 @@ class PatchOrderStatusOnContracted(BaseModel):
         return order, vaccount
 
 
-@dataclass
+@intellisense
 class PatchVirtualAccountOnOrderUpdated(BaseModel):
     """注文更新時に注文と仮想口座との整合性を検証し、仮想口座の最新の注文を更新する"""
 
