@@ -1,25 +1,17 @@
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Union
 
 from libs.pydantic import BaseModel as Model
 from pandemic import Unpack
 
-from .utils.objects import Service
-
 if TYPE_CHECKING:
     from dataclasses import dataclass as intellisense
 else:
-    origin_dataclass = dataclass
-    from pydantic import BaseModel as M
-
-    def dataclass(cls):
-        """dataclasses.dataclassと同様に振る舞う。ただし、pydantic.BaseModelの場合は何もしない。これは、VSCodeで初期化時の補完を働かせるためのハックです。"""
-        if issubclass(cls, M):
-            return cls
-        else:
-            return origin_dataclass(cls)
 
     def intellisense(cls):
+        """
+        dataclassに擬態する。vscodeの場合pydanticの補完が効かないため。
+        なお、sqlalchemyのモデルに適用しても効果がない。なぜだ。。
+        """
         return cls
 
 

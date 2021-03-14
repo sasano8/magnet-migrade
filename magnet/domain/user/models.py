@@ -4,9 +4,9 @@ from enum import Enum
 from typing import Type, Union
 
 import sqlalchemy as sa
-from pydantic import BaseModel
 from sqlalchemy.orm import load_only, relationship
 
+from ...commons import intellisense
 from ...database import Base, Session
 from ...models import TimeStampMixin
 
@@ -17,6 +17,7 @@ class UserRoles(str, Enum):
     user = "user"
 
 
+@intellisense
 class User(Base, TimeStampMixin):
     __tablename__ = "users"
 
