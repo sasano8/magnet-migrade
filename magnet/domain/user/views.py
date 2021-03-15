@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from fastapi import Depends, HTTPException, Security, status
+from fastapi import Depends, HTTPException, Path, Security, status
 
 from pandemic import APIRouter
 
@@ -94,7 +94,6 @@ async def modify_password_me(
 
 @user_me_router.get("/admin_or_power", response_model=schemas.User)
 async def get_me_if_admin_or_power(
-    db: Session = Depends(get_db),
     current_user: User = FilterRole(UserRoles.admin, UserRoles.poweruser),
 ):
     return current_user
@@ -123,23 +122,19 @@ async def query_user(
     return query.offset(q.skip).limit(q.limit).all()
 
 
-@user_router.get("/{id}", response_model=schemas.User)
+@user_router.get("/{user_id}", response_model=schemas.User)
 async def get_user(
     db: Session = Depends(get_db),
     current_user: User = FilterRole(UserRoles.admin, UserRoles.poweruser),
-    *,
-    id: int,
+    action: uc.GetUser = Depends(),
 ):
-    acition = uc.GetUser(id=id)
-    return acition.do(db)
+    return action.do(db)
 
 
-# @staticmethod
-# @user_router.delete("/user/{id}", status_code=200, response_model=int)
-# async def delete_user(
-#     db: Session = Depends(get_db),
-#     current_user: User = Security(get_current_user),
-#     *,
-#     id: int,
-# ) -> int:
-#     return UserService.delete(db, id=id)
+@user_router.delete("/user/{user_id}", status_code=200, response_model=int)
+async def delete_user(
+    db: Session = Depends(get_db),
+    current_user: User = FilterRole(UserRoles.admin, UserRoles.poweruser),
+    action: uc.DeleteUser = Depends(),
+) -> int:
+    return action.do(db)

@@ -2,7 +2,7 @@ import json
 from typing import Tuple
 
 import pytest
-from fastapi import Body, Depends, FastAPI, Query, Security
+from fastapi import Body, Depends, FastAPI, Path, Query, Security
 from fastapi.testclient import TestClient
 from pydantic import BaseModel as BA
 from pydantic import Field, validator
@@ -289,6 +289,21 @@ def test_fieldinfo():
     body = json.dumps(expect)
     assert f_client.post(url, data=body).json() == expect
     assert p_client.post(url, data=body).json() == expect
+
+
+def test_depends_path():
+    url = "/test_depends_path/{id}"
+
+    class MyTest(BaseModel):
+        id: int = Path(...)
+
+    @fast.get(url)
+    @pand.get(url)
+    async def test_user(request: MyTest = Depends(MyTest)):
+        return request
+
+    assert f_client.get("/test_depends_path/" + "10").json() == {"id": 10}
+    assert p_client.get("/test_depends_path/" + "20").json() == {"id": 20}
 
 
 def test_pydantic_view():

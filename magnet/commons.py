@@ -30,8 +30,9 @@ class BaseModel(Model):
         #     datetime.date: lambda v: datetime.datetime(year=v.year, month=v.month, day=v.day).isoformat(),
         # }
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)  # type: ignore
+    # argsは追加しないこと。fastapiで誤作動が生じることがある
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)  # type: ignore
         self.__post_init__()
 
     def __post_init__(self):

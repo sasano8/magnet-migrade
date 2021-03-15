@@ -1,6 +1,7 @@
 from typing import Any, List
 
 from fastapi import Depends, HTTPException, Security, status
+from fastapi.param_functions import Path
 from jwt import PyJWTError
 from pydantic import SecretStr, ValidationError, validator
 from pydantic.fields import Field
@@ -259,19 +260,19 @@ class IndexUser(BaseModel):
 
 @intellisense
 class GetUser(BaseModel):
-    id: int
+    id: int = Path(..., alias="user_id")
 
     def do(self, db: Session):
-        if user := db.query(User).get(id):
+        if not (user := db.query(User).get(self.id)):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
         return user
 
 
 @intellisense
 class DeleteUser(BaseModel):
-    id: int
+    id: int = Path(..., alias="user_id")
 
     def do(self, db: Session):
-        if not (user := db.query(User).get(id)):
+        if not (user := db.query(User).get(self.id)):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
         return user.delete(db)
