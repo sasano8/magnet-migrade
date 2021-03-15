@@ -159,7 +159,7 @@ async def index_order(
 @router.post("/etl/load_all")
 async def load_all():
     """株・為替・暗号通貨等のデータを最新化する"""
-    from ...etl.__main__ import run_daily
+    from ...etl import run_daily
 
     result = await run_daily()
     return result

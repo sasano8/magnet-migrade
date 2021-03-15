@@ -4,7 +4,6 @@ from fastapi.middleware.gzip import GZipMiddleware
 
 # from magnet.core import middlewares
 from fastapi.openapi.utils import get_openapi
-from fastapi.params import Depends
 from fastapi.responses import HTMLResponse
 
 import pandemic
@@ -25,25 +24,8 @@ def setup(func):
     return func
 
 
-# import magnet.ingester.views
-# import magnet.research.views
-# import magnet.executor.views
-# import magnet.crawler.views
-# import magnet.trader.views
-# from magnet.domain import
-# import magnet.develop.views
-# import magnet.system.views
-# import magnet.message.middlewares
-
-
-# @app.get("/admin/{id}", response_model=schemas.Account)
-# async def get_wild(account: TradeAccount = Depends(AccountService.scope)):
-#     return account
-
-
 @app.get("/", response_class=HTMLResponse)
 async def root():
-    # return {"message": "Hello World"}
     return """
     <html>
     <head>
@@ -113,12 +95,11 @@ from .worker import func
 async def startup_worker():
     """ワーカーを起動します"""
 
-    workers.start()
-    # await asyncio.sleep(1)
-    # func.delay()
+    from .domain.order import Broker
 
-    # from .crawler import request_crawler
-    # request_crawler.delay("scrape_google")
+    # client = Broker("bitflyer")
+    # await client()
+    # workers.start()
 
 
 @app.on_event("shutdown")

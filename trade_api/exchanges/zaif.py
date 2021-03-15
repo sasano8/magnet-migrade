@@ -1,6 +1,7 @@
 import datetime
 import hashlib
 import hmac
+import json
 from typing import Literal, Optional
 from urllib.parse import urlencode
 
@@ -432,7 +433,7 @@ class ZaifMarginTradingAPI(ZaifTradingAPI):
         params = dict(
             method="get_positions",
             nonce=datetime.datetime.utcnow().timestamp(),
-            type="margin",
+            type="futures",
             group_id=group_id,
             count=count,
             from_id=from_id,
@@ -455,14 +456,13 @@ class ZaifMarginTradingAPI(ZaifTradingAPI):
         params = dict(
             method="position_history",
             nonce=datetime.datetime.utcnow().timestamp(),
-            type="margin",
+            type="futures",
             leverage_id=leverage_id,
             group_id=group_id,
         )
         res = await self.request(url=url, params=params)
         return res.text
 
-    @decorators.Decode
     async def get_active_positions(
         self, group_id: int = None, currency_pair: enums.zaif_currency_pair = None
     ):
@@ -473,12 +473,25 @@ class ZaifMarginTradingAPI(ZaifTradingAPI):
         params = dict(
             method="active_positions",
             nonce=datetime.datetime.utcnow().timestamp(),
-            type="margin",
+            type="futures",
             group_id=group_id,
             currency_pair=currency_pair,
         )
         res = await self.request(url=url, params=params)
-        return res.text
+        return json.loads(res.text)
+
+    async def get_create_position(self, group_id: int, leverage_id: int):
+        """AirFXのユーザー自身の取引履歴の明細を取得します。"""
+        url = f"https://api.zaif.jp/tlapi"
+        params = dict(
+            method="create_position",
+            nonce=datetime.datetime.utcnow().timestamp(),
+            type="futures",
+            group_id=group_id,
+            leverage_id=leverage_id,
+        )
+        res = await self.request(url=url, params=params)
+        return json.loads(res.text)
 
     @decorators.Decode
     async def post_create_position(
@@ -578,7 +591,9 @@ class ZaifMarginTradingAPI(ZaifTradingAPI):
         """
         url = f"https://api.zaif.jp/tlapi"
         params = dict(
-            method="get___", nonce=datetime.datetime.utcnow().timestamp(), type="margin"
+            method="get___",
+            nonce=datetime.datetime.utcnow().timestamp(),
+            type="futures",
         )
         res = await self.request(url=url, params=params)
         return res.text

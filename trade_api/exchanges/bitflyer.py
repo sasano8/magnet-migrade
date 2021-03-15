@@ -191,6 +191,7 @@ class BitflyerPublicAPI:
         )
         return res.text
 
+    @decorators.Decode
     async def get_executions(
         self,
         product_code: str = "BTC_JPY",
@@ -204,7 +205,7 @@ class BitflyerPublicAPI:
             path="/v1/executions",
             body=create_params(product_code=product_code),
         )
-        return json.loads(res.text)
+        return res.text
 
     @decorators.Decode
     async def get_boradstate(self, product_code: str = "BTC_JPY"):
@@ -216,6 +217,7 @@ class BitflyerPublicAPI:
         )
         return res.text
 
+    @decorators.Decode
     async def get_health(self, product_code: str = "BTC_JPY"):
         """
         取引所の状態を取得する。
@@ -225,52 +227,59 @@ class BitflyerPublicAPI:
             path="/v1/gethealth",
             body=create_params(product_code=product_code),
         )
-        return json.loads(res.text)
+        return res.text
 
+    @decorators.Decode
     async def get_chats(self, from_date):
         """チャットの発言一覧を取得します。"""
         res = await self.request_private(
             method="GET", path="/v1/getchats", body=create_params(from_date=from_date)
         )
-        return json.loads(res.text)
+        return res.text
 
 
 class BitflyerPrivateAPI(BitflyerPublicAPI):
+    @decorators.Decode
     async def get_permissions(self):
         """API キーの権限を取得する。"""
         res = await self.request_private(
             method="GET", path="/v1/me/getpermissions", body=dict()
         )
-        return json.loads(res.text)
+        return res.text
 
+    @decorators.Decode
     async def get_balance(self):
         """資産残高を取得する。"""
         res = await self.request_private(
             method="GET", path="/v1/me/getbalance", body=dict()
         )
-        return json.loads(res.text)
+        return res.text
 
+    @decorators.Decode
     async def get_collateral(self):
         """証拠金の状態を取得する。"""
         res = await self.request_private(
             method="GET", path="/v1/me/getcollateral", body=dict()
         )
-        return json.loads(res.text)
+        return res.text
 
+    @decorators.Decode
     async def get_collateralaccounts(self):
         """通貨別の証拠金数量を取得する。"""
         res = await self.request_private(
             method="GET", path="/v1/me/getcollateralaccounts", body=dict()
         )
-        return json.loads(res.text)
+        return res.text
 
+    @decorators.Decode
     async def get_address(self):
         """仮想通貨を bitFlyer アカウントに預入るためのアドレスを取得します。"""
         res = await self.request_private(
             method="GET", path="/v1/me/getaddresses", body=dict()
         )
-        return json.loads(res.text)
+        return res.text
 
+    @decorators.Decode
     async def get_coinins(
         self, count: int = 100, before: int = None, after: int = None
     ):
@@ -280,14 +289,16 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
             path="/v1/me/getcoinins",
             body=create_params(count=count, before=before, after=after),
         )
-        return json.loads(res.text)
+        return res.text
 
+    @decorators.Decode
     async def get_bankaccounts(self):
         res = await self.request_private(
             method="GET", path="/v1/me/getbankaccounts", body=dict()
         )
-        return json.loads(res.text)
+        return res.text
 
+    @decorators.Decode
     async def get_deposits(
         self, count: int = 100, before: int = None, after: int = None
     ):
@@ -296,8 +307,9 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
             path="/v1/me/getdeposits",
             body=create_params(count=count, before=before, after=after),
         )
-        return json.loads(res.text)
+        return res.text
 
+    @decorators.Decode
     async def post_withdraw(
         self,
         bank_account_id: int,
@@ -316,8 +328,9 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
                 code=code,
             ),
         )
-        return json.loads(res.text)
+        return res.text
 
+    @decorators.Decode
     async def post_withdrawals(
         self, count: int = 100, before: int = None, after: int = None
     ):
@@ -327,8 +340,9 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
             path="/v1/me/getwithdrawals",
             body=create_params(count=count, before=before, after=after),
         )
-        return json.loads(res.text)
+        return res.text
 
+    @decorators.Decode
     async def post_sendchildorder(
         self,
         product_code: str,
@@ -353,8 +367,9 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
         res = await self.request_private(
             method="POST", path="/v1/me/sendchildorder", body=body
         )
-        return json.loads(res.text)
+        return res.text
 
+    @decorators.Decode
     async def post_cancelchildorder(
         self,
         product_code: str,
@@ -371,8 +386,9 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
         res = await self.request_private(
             method="POST", path="/v1/me/cancelchildorder", body=body
         )
-        return json.loads(res.text)
+        return res.text
 
+    @decorators.Decode
     async def post_sendparentorder(
         self,
         order_method: Literal["SIMPLE", "IFD", "OCO", "IFDOCO"] = "SIMPLE",
@@ -393,8 +409,9 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
         res = await self.request_private(
             method="POST", path="/v1/me/sendparentorder", body=body
         )
-        return json.loads(res.text)
+        return res.text
 
+    @decorators.Decode
     async def post_cancelparentorder(
         self,
         product_code: str,
@@ -410,8 +427,9 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
         res = await self.request_private(
             method="POST", path="/v1/me/cancelchildorder", body=body
         )
-        return json.loads(res.text)
+        return res.text
 
+    @decorators.Decode
     async def post_cancelallchildorders(
         self,
         product_code: str,
@@ -424,8 +442,9 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
         res = await self.request_private(
             method="POST", path="/v1/me/cancelallchildorders", body=body
         )
-        return json.loads(res.text)
+        return res.text
 
+    @decorators.Decode
     async def get_childorders(
         self,
         product_code: str,
@@ -454,8 +473,9 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
         res = await self.request_private(
             method="GET", path="/v1/me/getchildorders", body=body
         )
-        return json.loads(res.text)
+        return res.text
 
+    @decorators.Decode
     async def get_parentorders(
         self,
         product_code: str,
@@ -478,8 +498,9 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
         res = await self.request_private(
             method="POST", path="/v1/me/getparentorders", body=body
         )
-        return json.loads(res.text)
+        return res.text
 
+    @decorators.Decode
     async def get_parentorder(
         self, child_order_id: int = None, child_order_acceptance_id: str = None
     ):
@@ -492,8 +513,9 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
         res = await self.request_private(
             method="POST", path="/v1/me/getparentorder", body=body
         )
-        return json.loads(res.text)
+        return res.text
 
+    @decorators.Decode
     async def get_executions(
         self,
         product_code: str,
@@ -516,8 +538,9 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
         res = await self.request_private(
             method="GET", path="/v1/me/getexecutions", body=body
         )
-        return json.loads(res.text)
+        return res.text
 
+    @decorators.Decode
     async def get_balancehistory(
         self,
         currency_code: str = "JPY",
@@ -536,8 +559,9 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
         res = await self.request_private(
             method="GET", path="/v1/me/getbalancehistory", body=body
         )
-        return json.loads(res.text)
+        return res.text
 
+    @decorators.Decode
     async def get_positions(
         self,
         product_code: str = "FX_BTC_JPY",
@@ -550,8 +574,9 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
         res = await self.request_private(
             method="GET", path="/v1/me/getpositions", body=body
         )
-        return json.loads(res.text)
+        return res.text
 
+    @decorators.Decode
     async def get_collateralhistory(
         self, count: int = 100, before: int = None, after: int = None
     ):
@@ -561,8 +586,9 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
         res = await self.request_private(
             method="GET", path="/v1/me/getcollateralhistory", body=body
         )
-        return json.loads(res.text)
+        return res.text
 
+    @decorators.Decode
     async def get_tradingcommission(self, product_code: str):
         """取引手数料を取得する。"""
         body = create_params(product_code=product_code)
@@ -570,7 +596,7 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
         res = await self.request_private(
             method="GET", path=f"/v1/me/gettradingcommission", body=body
         )
-        return json.loads(res.text)
+        return res.text
 
 
 class BitflyerAPI(BitflyerPrivateAPI):

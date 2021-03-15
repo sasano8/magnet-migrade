@@ -1,13 +1,13 @@
 import datetime
-from typing import NamedTuple
+from typing import Literal
 
 from sqlalchemy.orm import Session
 
 from framework import DateTimeAware, Linq
 
-from ..commons import BulkResult
+from ..commons import BaseModel, BulkResult
 from ..domain.datastore import models, schemas
-from .__main__ import daily
+from .executor import daily
 
 
 @daily
@@ -19,7 +19,7 @@ async def daily_update_crypto_pair(db: Session) -> BulkResult:
     from ..trade_api.exchanges.cryptowatch import CryptowatchAPI
 
     m = models.CryptoPairs
-    rep = m.as_rep()
+    # rep = m.as_rep()
     provider = "cryptowatch"
 
     # extract
@@ -33,7 +33,7 @@ async def daily_update_crypto_pair(db: Session) -> BulkResult:
     )
 
     # load
-    deleted = rep.query(db).filter(m.provider == provider).delete()
+    deleted = db.query(models.CryptoPairs).filter(m.provider == provider).delete()
 
     count, succeeded, exceptions = query.dispatch(db.add)
     if exceptions:
@@ -42,69 +42,87 @@ async def daily_update_crypto_pair(db: Session) -> BulkResult:
     return BulkResult(deleted=deleted, inserted=succeeded, errors=exceptions)
 
 
-@daily
-async def daily_update_crypto_ohlc(db: Session) -> BulkResult:
-    """指定したリソースの４本値を洗い替えする"""
-    from ..trade_api.exchanges.cryptowatch import CryptowatchAPI
+class CryptoWatchOhlcExtractor(BaseModel):
+    """指定し市場通過ピリオドをcryptowatchから取得し、データストアに保存する。"""
 
-    class Partition(NamedTuple):
-        provider: str = "cryptowatch"
-        market: str = "bitflyer"
-        product: str = "btcjpy"
-        periods: int = 60 * 60 * 24
-
-    partition = Partition()
-
+    provider: Literal["cryptowatch"]
+    market: Literal["bitflyer"]
+    product: Literal["btcjpy"]
+    periods: int
     after: DateTimeAware = DateTimeAware(2010, 1, 1)
 
-    # extract
-    data = await CryptowatchAPI().list_ohlc(
-        market=partition.market,
-        product=partition.product,
-        periods=partition.periods,
-        after=after,
-    )
+    async def __call__(self, db: Session) -> BulkResult:
+        from ..trade_api.exchanges.cryptowatch import CryptowatchAPI
 
-    diff = datetime.timedelta(days=-1)
-    # transform
-    query = Linq(data).map(
-        lambda x: schemas.Ohlc(
-            **partition._asdict(),  # type: ignore
-            close_time=x.close_time,
-            start_time=x.close_time + diff,
-            open_price=x.open_price,
-            high_price=x.high_price,
-            low_price=x.low_price,
-            close_price=x.close_price,
-            volume=x.volume,
-            quote_volume=x.quote_volume,
+        data = await CryptowatchAPI().list_ohlc(
+            market=self.market,
+            product=self.product,
+            periods=self.periods,
+            after=self.after,
         )
-    )
 
-    # analyze
-    it = schemas.Ohlc.compute_technical(query)
-
-    # load
-    m = models.CryptoOhlc
-    rep = m.as_rep()
-
-    deleted = (
-        # crud.query_partition(db, **partition._asdict())
-        rep.query(db)
-        .filter(
-            m.provider == partition.provider,
-            m.market == partition.market,
-            m.product == partition.product,
-            m.periods == partition.periods,
+        diff = datetime.timedelta(days=-1)
+        partition = self.dict(exclude={"after"})
+        # transform
+        query = Linq(data).map(
+            lambda x: schemas.Ohlc(
+                **partition,  # type: ignore
+                close_time=x.close_time,
+                open_time=x.close_time + diff,
+                open_price=x.open_price,
+                high_price=x.high_price,
+                low_price=x.low_price,
+                close_price=x.close_price,
+                volume=x.volume,
+                quote_volume=x.quote_volume,
+            )
         )
-        .filter(m.close_time >= after)
-        .delete()
-    )
 
-    count, succeeded, exceptions = (
-        Linq(it).map(lambda x: m(**x.dict())).dispatch(lambda x: db.add(x))
-    )
-    if exceptions:
-        raise Exception(exceptions)
+        # analyze
+        it = schemas.Ohlc.compute_technical(query)
 
-    return BulkResult(deleted=deleted, inserted=succeeded, errors=exceptions)
+        # load
+        m = models.CryptoOhlc
+
+        deleted = (
+            db.query(models.CryptoOhlc)
+            .filter(
+                m.provider == self.provider,
+                m.market == self.market,
+                m.product == self.product,
+                m.periods == self.periods,
+            )
+            .filter(m.close_time >= self.after)
+            .delete()
+        )
+
+        count, succeeded, exceptions = (
+            Linq(it).map(lambda x: m(**x.dict())).dispatch(lambda x: db.add(x))
+        )
+        db.flush()
+        exception_records = (
+            db.query(models.CryptoOhlc).filter(m.close_price == 0).delete()
+        )
+        warning = (
+            f"{exception_records}件の不正なレコード（終値が0円など）は無視されました"
+            if exception_records
+            else ""
+        )
+
+        if exceptions:
+            raise Exception(exceptions)
+
+        return BulkResult(
+            deleted=deleted, inserted=succeeded, errors=exceptions, warning=warning
+        )
+
+
+daily(
+    CryptoWatchOhlcExtractor(
+        provider="cryptowatch",
+        market="bitflyer",
+        product="btcjpy",
+        periods=60 * 60 * 24,
+        after=DateTimeAware(2010, 1, 1),
+    )
+)

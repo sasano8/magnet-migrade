@@ -23,15 +23,15 @@ queue_crawler = rabbitmq_conn.consumer(queue_name="crawler", auto_ack=True)
 # ===================================================
 # brokers
 # ===================================================
-from .domain.broker.worker import BitflyerBroker
+from .domain.order import Broker
 
-broker = BitflyerBroker()
+order_watcher = Broker()
 
 # workers = SupervisorAsync(
 #     [rabbitmq_conn, queue_default, queue_crawler, broker]
 # ).to_executor(logger=logger)
 
-workers = SupervisorAsync([broker]).to_executor(logger=logger)
+workers = SupervisorAsync([order_watcher]).to_executor(logger=logger)
 
 
 @queue_default.task

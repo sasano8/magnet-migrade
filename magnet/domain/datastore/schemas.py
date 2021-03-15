@@ -27,8 +27,8 @@ class Ohlc(CryptoBase):
     # market: Literal["bitflyer"]
     # product: Literal["btcjpy"]
     # periods: int
+    open_time: datetime.date
     close_time: datetime.date
-    start_time: datetime.date
     open_price: float
     high_price: float
     low_price: float

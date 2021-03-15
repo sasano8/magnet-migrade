@@ -55,11 +55,13 @@ class BulkResult(BaseModel):
     inserted: int = 0
     errors: List[Any] = []
     error_summary: str = ""
+    warning: str = ""
 
 
-class TaskResult(BaseModel):
+class EtlJobResult(BaseModel):
     name: str
     deleted: int = 0
     inserted: int = 0
     errors: List[Any] = []
     error_summary: str = ""
+    warning: str = ""

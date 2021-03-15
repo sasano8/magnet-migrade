@@ -4,8 +4,9 @@ import signal
 from typing import Callable, List, TypeVar
 
 import typer
+from sqlalchemy.sql.sqltypes import Date
 
-from framework import undefined
+from framework import DateTimeAware, undefined
 
 from ...database import get_db
 
@@ -28,6 +29,40 @@ def inject(**kwargs):
         return wrapped
 
     return deco
+
+
+@app.command(help="日時ジョブスケジューラを起動し、市場情報の更新とデイリートレードを行います。")
+def start():
+    # import schedule  asyncが実装される予定だがまだ追加されていない
+    from datetime import timedelta
+
+    from magnet.etl import run_daily
+
+    def get_tommorow():
+        current = DateTimeAware.utcnow()
+        tommorow = DateTimeAware(
+            current.year, current.month, current.day, minute=5
+        ) + timedelta(days=1)
+        return tommorow
+
+    async def main():
+        while True:
+            tommorow = get_tommorow()
+            typer.echo(f"次回実行予定：{tommorow}　現在時刻：{DateTimeAware.utcnow()}")
+            while True:
+                current = DateTimeAware.utcnow()
+                if current < tommorow:
+                    await asyncio.sleep(60)
+                    continue
+
+                try:
+                    await run_daily()
+                except Exception as e:
+                    print(e)
+
+                break
+
+    asyncio.run(main())
 
 
 @app.command()

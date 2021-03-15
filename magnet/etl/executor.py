@@ -1,9 +1,11 @@
+import inspect
 from typing import Any, Callable, Coroutine, List, TypeVar
 
 from sqlalchemy.orm import Session
 
-from ..commons import BulkResult, TaskResult
+from ..commons import BulkResult, EtlJobResult
 from ..database import get_db
+from ..domain.datastore.models import EtlJobResult as EtlJobResultDatabase
 
 F = TypeVar("F", bound=Callable)
 
@@ -13,7 +15,7 @@ yearly_jobs: List[Callable[..., Coroutine[Session, Any, BulkResult]]] = []
 
 
 async def run_daily():
-    results: List[TaskResult] = []
+    results: List[EtlJobResult] = []
 
     for func in daily_jobs:
         for db in get_db():
@@ -24,7 +26,16 @@ async def run_daily():
                 db.rollback()
                 result.error_summary = str(e)
 
-            results.append(TaskResult(name=func.__name__, **result.dict()))
+            if inspect.isfunction(func):
+                name = func.__name__
+            else:
+                name = func.__class__.__name__
+
+            results.append(EtlJobResult(name=name, **result.dict()))
+
+    for db in get_db():
+        for info in results:
+            db.add(EtlJobResultDatabase(**info.dict()))
 
     return results
 

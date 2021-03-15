@@ -3,6 +3,7 @@ from typing import Iterator, Literal
 
 import sqlalchemy as sa
 from sqlalchemy.orm import Query
+from sqlalchemy.sql.expression import null
 
 from framework import DateTimeAware
 
@@ -26,8 +27,8 @@ class CryptoBase:
 
 class CryptoOhlc(Base, CryptoBase):
     __tablename__ = "__crypto_ohlc_daily"
+    open_time = sa.Column(sa.Date, nullable=True)
     close_time = sa.Column(sa.Date, nullable=False)
-    start_time = sa.Column(sa.Date, nullable=True)
     open_price = sa.Column(sa.Float, nullable=False)
     high_price = sa.Column(sa.Float, nullable=False)
     low_price = sa.Column(sa.Float, nullable=False)
@@ -43,7 +44,10 @@ class CryptoOhlc(Base, CryptoBase):
     t_sma_30 = sa.Column(sa.Float, nullable=False, default=0)
     t_sma_200 = sa.Column(sa.Float, nullable=False, default=0)
     t_cross = sa.Column(
-        sa.Integer, nullable=False, default=0, comment="1=golden cross -1=dead cross"
+        sa.Integer,
+        nullable=False,
+        default=0,
+        comment="1=golden cross -1=dead cross 2021/3/15 t_sma_5 t_sma_25のクロスを検出",
     )
 
     __table_args__ = (
@@ -191,3 +195,17 @@ class Topic(Base, WebArchiveBase):
 #     detail = sa.Column(sa.JSON, nullable=False, default={})
 
 # url = "http://www.scj.go.jp/ja/info/kohyo/year.html"  # 日本学術会議　提言　報告
+
+
+class EtlJobResult(Base):
+    __tablename__ = "etl_job_results"
+    id = sa.Column(sa.Integer, primary_key=True)
+    execute_at = sa.Column(
+        sa.DateTime(timezone=True), nullable=False, default=DateTimeAware.utcnow
+    )
+    name = sa.Column(sa.String(255), nullable=False)
+    deleted = sa.Column(sa.Integer, nullable=False)
+    inserted = sa.Column(sa.Integer, nullable=False)
+    errors = sa.Column(sa.JSON, nullable=False, default=[])
+    error_summary = sa.Column(sa.Text, nullable=False)
+    warning = sa.Column(sa.Text, nullable=False)
