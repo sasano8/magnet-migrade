@@ -23,15 +23,20 @@ queue_crawler = rabbitmq_conn.consumer(queue_name="crawler", auto_ack=True)
 # ===================================================
 # brokers
 # ===================================================
-from .domain.order import Broker
+# from .domain.order import Broker
 
-order_watcher = Broker()
+# order_watcher = Broker()
 
 # workers = SupervisorAsync(
 #     [rabbitmq_conn, queue_default, queue_crawler, broker]
 # ).to_executor(logger=logger)
 
-workers = SupervisorAsync([order_watcher]).to_executor(logger=logger)
+# workers = SupervisorAsync([order_watcher]).to_executor(logger=logger)
+
+from .database import get_db
+from .domain.order.usecase import ScheduleBot
+
+workers = SupervisorAsync().to_executor(logger=logger)
 
 
 @queue_default.task

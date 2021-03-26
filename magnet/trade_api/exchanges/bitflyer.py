@@ -2,13 +2,15 @@ import datetime
 import hashlib
 import hmac
 import json
+from decimal import Decimal
 from enum import Enum
 from typing import List, Literal
 from urllib.parse import urlencode
 
 import httpx
-from pydantic import BaseModel
+from pydantic import BaseModel, parse_obj_as
 
+from framework import DateTimeAware
 from libs import create_params, decorators
 
 from .. import enums
@@ -45,19 +47,19 @@ class Board(BaseModel):
 class Ticker(BaseModel):
     product_code: str
     state: str
-    timestamp: datetime.datetime
+    timestamp: DateTimeAware
     tick_id: int
-    best_bid: float
-    best_ask: float
-    best_bid_size: float
-    best_ask_size: float
-    total_bid_depth: float
-    total_ask_depth: float
-    market_bid_size: float
-    market_ask_size: float
-    ltp: float
-    volume: float
-    volume_by_product: float
+    best_bid: Decimal
+    best_ask: Decimal
+    best_bid_size: Decimal
+    best_ask_size: Decimal
+    total_bid_depth: Decimal
+    total_ask_depth: Decimal
+    market_bid_size: Decimal
+    market_ask_size: Decimal
+    ltp: Decimal
+    volume: Decimal
+    volume_by_product: Decimal
 
 
 #
@@ -134,13 +136,13 @@ class BitflyerPublicAPI:
             if method == "GET":
                 response = await client.get(url, headers=headers)
             elif method == "POST":
-                response = await client.post(
-                    url, headers=headers, data=json.dumps(body)
-                )
+                data = json.dumps(body)
+                response = await client.post(url, headers=headers, data=data)
             else:
                 raise Exception(f"Unkwon http method: {method}")
 
         try:
+            # 200番台でなければ例外を発生させる
             response.raise_for_status()
         except httpx._exceptions.HTTPError as err:
             raise Exception(
@@ -181,7 +183,7 @@ class BitflyerPublicAPI:
         )
         return res.text
 
-    @decorators.MapJson
+    # @decorators.MapJson
     async def get_ticker(self, product_code: str = "BTC_JPY") -> Ticker:
         """通貨の概要を取得する。"""
         res = await self.request_private(
@@ -189,7 +191,8 @@ class BitflyerPublicAPI:
             path="/v1/ticker",
             body=create_params(product_code=product_code),
         )
-        return res.text
+        dic = json.loads(res.text)
+        return parse_obj_as(Ticker, dic)
 
     async def get_executions(
         self,
@@ -398,19 +401,23 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
     async def post_cancelparentorder(
         self,
         product_code: str,
-        child_order_id: int = None,
-        chile_order_acceptance_id=None,
-    ):
+        parent_order_id: int = None,
+        parent_order_acceptance_id=None,
+    ) -> Literal[""]:
+        """親注文をキャンセルする。キャンセルはべき等性で応答が返り、何度実行してもOKが返る"""
         body = create_params(
             product_code=product_code,
-            child_order_id=child_order_id,
-            chile_order_acceptance_id=chile_order_acceptance_id,
+            parent_order_id=parent_order_id,
+            parent_order_acceptance_id=parent_order_acceptance_id,
         )
 
         res = await self.request_private(
-            method="POST", path="/v1/me/cancelchildorder", body=body
+            method="POST", path="/v1/me/cancelparentorder", body=body
         )
-        return json.loads(res.text)
+        return res.text  # 空テキストでjson.loads失敗が失敗するため、単に空テキストを返す
+
+    async def post_cancelchildorder(self):
+        raise NotImplementedError()
 
     async def post_cancelallchildorders(
         self,
@@ -462,7 +469,7 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
         count: int = 100,
         before: int = None,
         after: int = None,
-        chiled_order_state: Literal[
+        parent_order_state: Literal[
             "ACTIVE", "COMPLETED", "CANCELED", "EXPIRED", "REJECTED"
         ] = None,
     ):
@@ -472,25 +479,25 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
             count=count,
             before=before,
             after=after,
-            chiled_order_state=chiled_order_state,
+            parent_order_state=parent_order_state,
         )
 
         res = await self.request_private(
-            method="POST", path="/v1/me/getparentorders", body=body
+            method="GET", path="/v1/me/getparentorders", body=body
         )
         return json.loads(res.text)
 
     async def get_parentorder(
-        self, child_order_id: int = None, child_order_acceptance_id: str = None
+        self, parent_order_id: int = None, parent_order_acceptance_id: str = None
     ):
         """親注文の詳細を取得する。"""
         body = create_params(
-            child_order_id=child_order_id,
-            child_order_acceptance_id=child_order_acceptance_id,
+            parent_order_id=parent_order_id,
+            parent_order_acceptance_id=parent_order_acceptance_id,
         )
 
         res = await self.request_private(
-            method="POST", path="/v1/me/getparentorder", body=body
+            method="GET", path="/v1/me/getparentorder", body=body
         )
         return json.loads(res.text)
 

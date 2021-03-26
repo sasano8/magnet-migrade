@@ -2,7 +2,7 @@ from decimal import ROUND_DOWN, ROUND_HALF_UP, ROUND_UP, Decimal
 
 from pydantic import BaseModel, Field, validate_arguments
 
-__all__ = ["calc_unit_amount"]
+# __all__ = ["calc_unit_amount"]
 
 
 @validate_arguments
@@ -10,7 +10,7 @@ def calc_amount(
     budget: Decimal = Field(..., ge=0),
     real_price: Decimal = Field(..., gt=0),
     min_unit: Decimal = Field(default_factory=lambda: Decimal("0.01"), gt=0),
-):
+) -> Decimal:
     """取引価格に対して、予算内で発注可能な数量を返す
 
     Args:

@@ -7,11 +7,10 @@ from pydantic import Field, validator
 from sqlalchemy.orm import Query
 
 from framework import DateTimeAware
-from libs.pydantic.models import BaseModel
 from magnet.domain.user.models import User
 from pytrade.portfolio import AskBid, PositionStatus, VirtualAccount
 
-from ...commons import intellisense
+from ...commons import BaseModel, intellisense
 from ...database import Session
 from .models import TradeAccount, TradePosition, TradeVirtualAccount
 

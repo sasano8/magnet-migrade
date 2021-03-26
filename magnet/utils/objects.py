@@ -18,7 +18,7 @@ from typing import (
 
 from fastapi import HTTPException, status
 from pydantic import BaseModel
-from sqlalchemy import inspect, or_
+from sqlalchemy import Column, inspect, or_, select, update
 from sqlalchemy.orm import Query, Session, load_only, make_transient
 
 from framework import undefined
@@ -399,6 +399,13 @@ class MyQuery(Query):
 
 
 class Entity:
+    @classmethod
+    def select(cls, *columns: Union[str, Column]) -> select:
+        if columns:
+            return select(cls).options(load_only(*columns))
+        else:
+            return select(cls)
+
     def create(self, db: Session):
         """インスタンスを作成し、フラッシュする。idなどが発行されるが、コミットまで状態は確定していない。"""
         db.add(self)
@@ -412,6 +419,28 @@ class Entity:
         [setattr(self, k, v) for k, v in update.items()]  # type: ignore
         db.flush()
         return self
+
+    def identify(self):
+        """自身を特定するcriterionを返します"""
+        if self.id is None:
+            raise KeyError("データベースレコードを特定できません。インスタンスのidはNoneです。")
+        return self.__class__.id == self.id
+
+    @property
+    def stmt_update(
+        self,
+        # **values,
+        # synchronize_session: Literal[
+        #     False, "fetch", "evaluate"
+        # ] = False,  # Falseはメモリ内オブジェクトを同期しない
+    ):
+        """update文のwhereを組み立てます。なお、valuesを複数使用すると値は最後の値が有効になります。"""
+        return (
+            update(self.__class__)
+            .where(self.identify)
+            .execution_options(synchronize_session=False)
+            .values
+        )
 
     def delete(self, db: Session) -> Literal[1]:
         """インスタンスを削除し、他オブジェクトも含む変更をデータベースにフラッシュする。コミットまで状態は確定しない。"""

@@ -114,7 +114,9 @@ class Task:
 class SupervisorAsync(Iterable[Task]):
     """実行するコルーチン関数を管理する"""
 
-    def __init__(self, coroutine_functions: Iterable[Callable[..., Coroutine]]) -> None:
+    def __init__(
+        self, coroutine_functions: Iterable[Callable[..., Coroutine]] = []
+    ) -> None:
         self.__root__ = coroutine_functions
 
     def __iter__(self) -> Iterator[Task]:

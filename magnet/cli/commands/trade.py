@@ -32,7 +32,7 @@ def inject(**kwargs):
 
 
 @app.command(help="日時ジョブスケジューラを起動し、市場情報の更新とデイリートレードを行います。")
-def start():
+def start(immediate: bool =False):
     # import schedule  asyncが実装される予定だがまだ追加されていない
     from datetime import timedelta
 
@@ -41,9 +41,15 @@ def start():
     def get_tommorow():
         current = DateTimeAware.utcnow()
         tommorow = DateTimeAware(
-            current.year, current.month, current.day, minute=5
+            current.year, current.month, current.day, minute=10  # 最速で更新すると、変更が反映されていないことがあるので、時間を置く
         ) + timedelta(days=1)
         return tommorow
+
+    async def exec_job():
+        try:
+            await run_daily()
+        except Exception as e:
+            print(e)
 
     async def main():
         while True:
@@ -55,14 +61,13 @@ def start():
                     await asyncio.sleep(60)
                     continue
 
-                try:
-                    await run_daily()
-                except Exception as e:
-                    print(e)
-
+                await exec_job()
                 break
 
-    asyncio.run(main())
+    if immediate:
+        asyncio.run(exec_job())
+    else:
+        asyncio.run(main())
 
 
 @app.command()

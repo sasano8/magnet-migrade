@@ -1,4 +1,4 @@
-import logging
+# import logging
 from typing import List
 
 from fastapi import Depends
@@ -11,7 +11,7 @@ from ...domain.user.views import get_current_user_id
 from . import models, schemas
 from . import usecase as uc
 
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)
 
 router = pandemic.APIRouter()
 

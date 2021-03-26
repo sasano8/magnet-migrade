@@ -3,7 +3,6 @@ from typing import Iterator, Literal
 
 import sqlalchemy as sa
 from sqlalchemy.orm import Query
-from sqlalchemy.sql.expression import null
 
 from framework import DateTimeAware
 
@@ -36,6 +35,12 @@ class CryptoOhlc(Base, CryptoBase):
     volume = sa.Column(sa.Float, nullable=False)
     quote_volume = sa.Column(sa.Float, nullable=False)
 
+    wb_cs = sa.Column(
+        sa.DECIMAL, nullable=False, default=0, comment="white black candle stick"
+    )
+    wb_cs_rate = sa.Column(
+        sa.DECIMAL, nullable=False, default=0, comment="white black candle stick"
+    )
     t_sma_5 = sa.Column(sa.Float, nullable=False, default=0)
     t_sma_10 = sa.Column(sa.Float, nullable=False, default=0)
     t_sma_15 = sa.Column(sa.Float, nullable=False, default=0)
@@ -43,12 +48,14 @@ class CryptoOhlc(Base, CryptoBase):
     t_sma_25 = sa.Column(sa.Float, nullable=False, default=0)
     t_sma_30 = sa.Column(sa.Float, nullable=False, default=0)
     t_sma_200 = sa.Column(sa.Float, nullable=False, default=0)
+    t_sma_rate = sa.Column(sa.DECIMAL(10, 2), nullable=False, default=0)
     t_cross = sa.Column(
         sa.Integer,
         nullable=False,
         default=0,
         comment="1=golden cross -1=dead cross 2021/3/15 t_sma_5 t_sma_25のクロスを検出",
     )
+    t_rsi_14 = sa.Column(sa.DECIMAL, nullable=True, default=0)
 
     __table_args__ = (
         sa.UniqueConstraint("provider", "market", "product", "periods", "close_time"),
@@ -204,8 +211,10 @@ class EtlJobResult(Base):
         sa.DateTime(timezone=True), nullable=False, default=DateTimeAware.utcnow
     )
     name = sa.Column(sa.String(255), nullable=False)
+    description = sa.Column(sa.String(1023), nullable=False, default="")
     deleted = sa.Column(sa.Integer, nullable=False)
     inserted = sa.Column(sa.Integer, nullable=False)
+    ignored = sa.Column(sa.Integer, nullable=False, default=0)
     errors = sa.Column(sa.JSON, nullable=False, default=[])
     error_summary = sa.Column(sa.Text, nullable=False)
     warning = sa.Column(sa.Text, nullable=False)

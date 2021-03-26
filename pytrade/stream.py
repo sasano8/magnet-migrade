@@ -56,6 +56,7 @@ class DealMessage(BaseModel):
     buy_and_sell: BuyAndSellSignal = BuyAndSellSignal.NO
     reason: str = ""
     priority: int = 100
+    target_price: Decimal = None
 
 
 class Dealer:

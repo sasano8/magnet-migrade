@@ -28,10 +28,14 @@ async def run_daily():
 
             if inspect.isfunction(func):
                 name = func.__name__
+                description = func.__doc__ or ""
             else:
                 name = func.__class__.__name__
+                description = func.description  # type: ignore
 
-            results.append(EtlJobResult(name=name, **result.dict()))
+            results.append(
+                EtlJobResult(name=name, description=description, **result.dict())
+            )
 
     for db in get_db():
         for info in results:

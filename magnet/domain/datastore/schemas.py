@@ -1,12 +1,15 @@
 import datetime
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Iterable, List, Literal, Optional
+
+import numpy as np
 
 from framework import DateTimeAware, Linq
 
 from ...commons import BaseModel
 
 
+# どこも使ってないかも
 class Pairs(BaseModel):
     id: Optional[int]
     provider: Literal["cryptowatch"]
@@ -17,7 +20,7 @@ class CryptoBase(BaseModel):
     id: Optional[int]
     provider: Literal["cryptowatch"]
     market: Literal["bitflyer"]
-    product: Literal["btcjpy"]
+    product: Literal["btcjpy", "btcfxjpy"]
     periods: int
 
 
@@ -35,6 +38,8 @@ class Ohlc(CryptoBase):
     close_price: float
     volume: float
     quote_volume: float
+    wb_cs: Decimal = None  # 陽線陰線 white candlestick black candelstick
+    wb_cs_rate: Decimal = None
 
     t_sma_5: float = None
     t_sma_10: float = None
@@ -43,14 +48,58 @@ class Ohlc(CryptoBase):
     t_sma_25: float = None
     t_sma_30: float = None
     t_sma_200: float = None
+    t_sma_rate: Decimal = None  # sma_5とsma_25の勢いをレート化
 
     t_cross: int = None
+    t_rsi_14: Decimal = None
 
     class Config:
         orm_mode = True
 
     @classmethod
-    def compute_technical(cls, ohlc_arr: Iterable["Ohlc"]) -> "List[Ohlc]":
+    def compute_wb_cs(cls, ohlc_arr: Iterable["Ohlc"]) -> "Iterable[Ohlc]":
+        """
+        ２日連続で陽線　551回
+        ２日連続で陰線　369回
+        陽線から陰線　または　陰線　から　陽線　1029回
+        つまり、前日と反対にエントリーすれば勝てる可能性が高い
+        """
+        point = Decimal("0.01")
+        for ohlc in ohlc_arr:
+            ohlc.wb_cs = ohlc.close_price - ohlc.open_price
+            ohlc.wb_cs_rate = (
+                ohlc.close_price / ohlc.open_price if ohlc.open_price else 0
+            )
+            ohlc.wb_cs_rate = ohlc.wb_cs_rate.quantize(point, rounding=ROUND_HALF_UP)
+
+        return ohlc_arr
+
+    @classmethod
+    def compute_rsi(cls, ohlc_arr: Iterable["Ohlc"]) -> "Iterable[Ohlc]":
+        # 上げ幅の合計÷(上げ幅の合計+下げ幅の合計)×100
+        sr = Linq(ohlc_arr).map(lambda x: x.wb_cs).to_series()
+        up, down = sr.copy(), sr.copy()
+        up[up < 0] = 0
+        down[down > 0] = 0
+
+        up_sma_14 = up.rolling(14, min_periods=1).mean()
+        down_sma_14 = down.abs().rolling(14, min_periods=1).mean()
+        sum_sma_14 = up_sma_14 + down_sma_14
+
+        RS = up_sma_14 / sum_sma_14
+        RS = RS.round(2)  # 小数点第２位で丸め
+        RSI = RS.replace([np.inf, -np.inf], 0.5)  # 無限は0.5とする
+
+        point = Decimal("0.01")
+
+        for index, item in enumerate(ohlc_arr):
+            item.t_rsi_14 = RSI[index]
+            item.t_rsi_14.quantize(point, rounding=ROUND_HALF_UP)
+
+        return ohlc_arr
+
+    @classmethod
+    def compute_sma_and_cross(cls, ohlc_arr: Iterable["Ohlc"]) -> "List[Ohlc]":
         import pandas as pd
 
         ohlc_arr = list(ohlc_arr)
@@ -80,6 +129,11 @@ class Ohlc(CryptoBase):
                 item.t_cross = -1
             else:
                 item.t_cross = 0
+
+            item.t_sma_rate = item.t_sma_5 * 2 / (item.t_sma_5 + item.t_sma_25)
+            item.t_sma_rate = item.t_sma_rate.quantize(
+                Decimal("0.01"), rounding=ROUND_HALF_UP
+            )
 
         previous_cross = 0
 

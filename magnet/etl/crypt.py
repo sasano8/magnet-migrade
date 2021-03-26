@@ -19,7 +19,6 @@ async def daily_update_crypto_pair(db: Session) -> BulkResult:
     from ..trade_api.exchanges.cryptowatch import CryptowatchAPI
 
     m = models.CryptoPairs
-    # rep = m.as_rep()
     provider = "cryptowatch"
 
     # extract
@@ -28,12 +27,12 @@ async def daily_update_crypto_pair(db: Session) -> BulkResult:
     # transform
     query = (
         Linq(data)
-        .map(lambda x: schemas.Pairs(provider=provider, symbol=x.symbol).dict())  # type: ignore
-        .map(lambda x: m(**x))
+        # .map(lambda x: schemas.Pairs(provider=provider, symbol=x.symbol).dict())  # type: ignore
+        .map(lambda x: m(provider=provider, symbol=x.symbol))
     )
 
     # load
-    deleted = db.query(models.CryptoPairs).filter(m.provider == provider).delete()
+    deleted = db.query(m).filter(m.provider == provider).delete()
 
     count, succeeded, exceptions = query.dispatch(db.add)
     if exceptions:
@@ -42,14 +41,24 @@ async def daily_update_crypto_pair(db: Session) -> BulkResult:
     return BulkResult(deleted=deleted, inserted=succeeded, errors=exceptions)
 
 
-class CryptoWatchOhlcExtractor(BaseModel):
+class JobBase(BaseModel):
+    @property
+    def description(self):
+        return self.__class__.__doc__ or ""
+
+
+class CryptoWatchOhlcExtractor(JobBase):
     """指定し市場通過ピリオドをcryptowatchから取得し、データストアに保存する。"""
 
     provider: Literal["cryptowatch"]
     market: Literal["bitflyer"]
-    product: Literal["btcjpy"]
+    product: Literal["btcjpy", "btcfxjpy"]
     periods: int
     after: DateTimeAware = DateTimeAware(2010, 1, 1)
+
+    @property
+    def description(self):
+        return f"{self.provider} {self.market} {self.product} {self.periods}"
 
     async def __call__(self, db: Session) -> BulkResult:
         from ..trade_api.exchanges.cryptowatch import CryptowatchAPI
@@ -79,7 +88,9 @@ class CryptoWatchOhlcExtractor(BaseModel):
         )
 
         # analyze
-        it = schemas.Ohlc.compute_technical(query)
+        it = schemas.Ohlc.compute_sma_and_cross(query)
+        it = schemas.Ohlc.compute_wb_cs(it)
+        it = schemas.Ohlc.compute_rsi(it)
 
         # load
         m = models.CryptoOhlc
@@ -100,21 +111,37 @@ class CryptoWatchOhlcExtractor(BaseModel):
             Linq(it).map(lambda x: m(**x.dict())).dispatch(lambda x: db.add(x))
         )
         db.flush()
-        exception_records = (
-            db.query(models.CryptoOhlc).filter(m.close_price == 0).delete()
-        )
-        warning = (
-            f"{exception_records}件の不正なレコード（終値が0円など）は無視されました"
-            if exception_records
-            else ""
-        )
+        ignored = db.query(models.CryptoOhlc).filter(m.close_price == 0).delete()
+        warning = f"終値0円は不正なレコードとして無視されました" if ignored else ""
 
         if exceptions:
             raise Exception(exceptions)
 
         return BulkResult(
-            deleted=deleted, inserted=succeeded, errors=exceptions, warning=warning
+            deleted=deleted,
+            inserted=succeeded - ignored,
+            ignored=ignored,
+            errors=exceptions,
+            warning=warning,
         )
+
+
+class SystemTradeBot(JobBase):
+    """test用bot"""
+
+    profile_id: int
+
+    async def __call__(self, db: Session) -> BulkResult:
+        from magnet.domain.order.usecase import ScheduleBot
+
+        errors = []
+
+        try:
+            await ScheduleBot(profile_id=self.profile_id).deal(db)
+        except Exception as e:
+            errors.append(e)
+
+        return BulkResult(errors=errors)
 
 
 daily(
@@ -126,3 +153,16 @@ daily(
         after=DateTimeAware(2010, 1, 1),
     )
 )
+
+
+daily(
+    CryptoWatchOhlcExtractor(
+        provider="cryptowatch",
+        market="bitflyer",
+        product="btcfxjpy",
+        periods=60 * 60 * 24,
+        after=DateTimeAware(2010, 1, 1),
+    )
+)
+
+daily(SystemTradeBot(profile_id=1))

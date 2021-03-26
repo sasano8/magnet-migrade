@@ -53,6 +53,7 @@ class PagenationQuery(BaseModel, Unpack):
 class BulkResult(BaseModel):
     deleted: int = 0
     inserted: int = 0
+    ignored: int = 0
     errors: List[Any] = []
     error_summary: str = ""
     warning: str = ""
@@ -60,8 +61,10 @@ class BulkResult(BaseModel):
 
 class EtlJobResult(BaseModel):
     name: str
+    description: str = ""
     deleted: int = 0
     inserted: int = 0
+    ignored: int = 0
     errors: List[Any] = []
     error_summary: str = ""
     warning: str = ""

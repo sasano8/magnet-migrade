@@ -62,6 +62,7 @@ def create_db_engine(connection_string):
         json_serializer=json_dumps,
         # コネクションプール設定
         # poolclass=QueuePool, pool_size= max_overflow
+        future=True,  # sqlalchemy2.0モードにする
     )
     session_maker = sessionmaker(
         autocommit=False, autoflush=False, bind=engine, query_cls=MyQuery
