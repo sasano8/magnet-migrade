@@ -25,8 +25,6 @@ async def get_bot(profile_id: int, db=Depends(get_db)):
     return action.do(db)
 
 
-
-
 @router.post("/bot/{profile_id}/switch", description="BotのOnOffを切り替えます。")
 async def switch_bot(profile_id: int, is_active: bool, db=Depends(get_db)):
     action = uc.ScheduleBot(profile_id=profile_id)
@@ -37,3 +35,12 @@ async def switch_bot(profile_id: int, is_active: bool, db=Depends(get_db)):
 async def deal_bot(profile_id: int, db=Depends(get_db)):
     action = uc.ScheduleBot(profile_id=profile_id)
     return await action.deal(db)
+
+
+@router.post("/etl/load_all")
+async def load_all():
+    """株・為替・暗号通貨等のデータを最新化する"""
+    from ...etl import run_daily
+
+    result = await run_daily()
+    return result
