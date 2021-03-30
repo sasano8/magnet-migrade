@@ -8,12 +8,11 @@ from fastapi.security import (
     SecurityScopes,
 )
 from passlib.context import CryptContext
-from starlette.requests import Request
 
 from framework import DateTimeAware
-from libs.fastapi import security
 
 from ...config import UserAccessTokenConfig
+from .access_token import AccessToken
 
 env = UserAccessTokenConfig()
 
@@ -23,7 +22,7 @@ ALGORITHM = env.access_token_algorithm
 ACCESS_TOKEN_EXPIRE_MINUTES = env.access_token_expire_minutes
 
 
-authorizer = security.AccessToken(
+authorizer = AccessToken(
     token_url=TOKEN_URL,
     secret_key=SECRET_KEY,
     algorithm=ALGORITHM,

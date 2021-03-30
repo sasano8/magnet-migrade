@@ -54,6 +54,8 @@ class Item(Base):
 
 
 class DenyToken(Base):
+    """認可拒否のため、失効したアクセストークンを管理する。"""
+
     id = sa.Column(sa.Integer, primary_key=True)
     token = sa.Column(sa.String(255), unique=True)
     user_name = sa.Column(sa.String(255))

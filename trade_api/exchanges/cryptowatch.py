@@ -5,8 +5,6 @@ from typing import Dict, List, Mapping, Tuple
 import httpx
 from pydantic import BaseModel, parse_obj_as
 
-from libs import create_params, decorators
-
 
 class Allowance(BaseModel):
     cost: float
@@ -32,7 +30,6 @@ class Ohlc(BaseModel):
     quote_volume: float
 
 
-# @decorators.Instantiate
 class CryptowatchAPI:
     last_allowance: Allowance = Allowance(cost=0, remaining=1000000, upgrade="")
 

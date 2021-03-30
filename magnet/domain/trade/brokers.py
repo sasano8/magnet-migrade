@@ -1,87 +1,14 @@
-import asyncio
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Any, Dict, Literal, Union
 
 from fastapi.encoders import jsonable_encoder
 
-# from ...commons import intellisense
+from trade_api import BitflyerAPI
+
 from ...config import APICredentialBitflyer
-from ...trade_api import BitflyerAPI
 from .abc import BrokerImpl
 from .repository import BrokerRepository
 from .schemas import OrderResult, PreOrder, TradeResult
-
-# from pydantic import BaseModel, root_validator
-
-
-# @intellisense
-# class PreOrder(BaseModel):
-#     product_code: str
-#     side: Literal["BUY", "SELL"] = "SELL"
-#     entry_price: Decimal
-#     size: Decimal
-#     limit_rate: Decimal = None
-#     stop_rate: Decimal = None
-
-#     @root_validator
-#     def check_limit_stop_range(cls, values):
-#         side = values.get("side")
-#         limit_rate = values.get("limit_rate", None)
-#         stop_rate = values.get("stop_rate", None)
-
-#         if limit_rate is not None:
-#             if side == "BUY":
-#                 if not limit_rate > 1:
-#                     raise ValueError()
-#             else:
-#                 if not limit_rate < 1:
-#                     raise ValueError()
-
-#         if stop_rate is not None:
-#             if side == "BUY":
-#                 if not stop_rate < 1:
-#                     raise ValueError()
-#             else:
-#                 if not stop_rate > 1:
-#                     raise ValueError()
-
-#         return values
-
-#     @root_validator
-#     def check_limit(cls, values):
-#         limit_rate = values.get("limit_rate", None)
-#         stop_rate = values.get("stop_rate", None)
-
-#         # 注文処理が面倒なので、両方Noneかそうじゃないかだけ許容する
-#         if limit_rate is not None:
-#             if stop_rate is None:
-#                 raise ValueError()
-
-#         if limit_rate is None:
-#             if stop_rate is not None:
-#                 raise ValueError()
-
-#         return values
-
-#     @property
-#     def is_limit_stop(self):
-#         return self.limit_rate is not None and self.stop_rate is not None
-
-#     @property
-#     def limit_price(self):
-#         """エントリー方向の利確価格を返す"""
-#         if self.limit_rate is None:
-#             return None
-#         else:
-#             return self.entry_price * self.limit_rate
-
-#     @property
-#     def stop_price(self):
-#         """エントリー方向と逆の損切価格を返す"""
-#         if self.stop_rate is None:
-#             return None
-#         else:
-#             return self.entry_price * self.stop_rate
 
 
 @BrokerRepository.register

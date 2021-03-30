@@ -2,16 +2,19 @@ import datetime
 import hashlib
 import hmac
 import json
+from decimal import Decimal
 from enum import Enum
 from typing import List, Literal
 from urllib.parse import urlencode
 
 import httpx
-from pydantic import BaseModel
+from pydantic import BaseModel, parse_obj_as
 
-from libs import create_params, decorators
+from framework import DateTimeAware
+from libs import decorators
 
 from .. import enums
+from ..utils import create_params
 
 
 class Market(BaseModel):
@@ -45,19 +48,19 @@ class Board(BaseModel):
 class Ticker(BaseModel):
     product_code: str
     state: str
-    timestamp: datetime.datetime
+    timestamp: DateTimeAware
     tick_id: int
-    best_bid: float
-    best_ask: float
-    best_bid_size: float
-    best_ask_size: float
-    total_bid_depth: float
-    total_ask_depth: float
-    market_bid_size: float
-    market_ask_size: float
-    ltp: float
-    volume: float
-    volume_by_product: float
+    best_bid: Decimal
+    best_ask: Decimal
+    best_bid_size: Decimal
+    best_ask_size: Decimal
+    total_bid_depth: Decimal
+    total_ask_depth: Decimal
+    market_bid_size: Decimal
+    market_ask_size: Decimal
+    ltp: Decimal
+    volume: Decimal
+    volume_by_product: Decimal
 
 
 #
@@ -134,13 +137,13 @@ class BitflyerPublicAPI:
             if method == "GET":
                 response = await client.get(url, headers=headers)
             elif method == "POST":
-                response = await client.post(
-                    url, headers=headers, data=json.dumps(body)
-                )
+                data = json.dumps(body)
+                response = await client.post(url, headers=headers, data=data)
             else:
                 raise Exception(f"Unkwon http method: {method}")
 
         try:
+            # 200番台でなければ例外を発生させる
             response.raise_for_status()
         except httpx._exceptions.HTTPError as err:
             raise Exception(
@@ -181,7 +184,7 @@ class BitflyerPublicAPI:
         )
         return res.text
 
-    @decorators.MapJson
+    # @decorators.MapJson
     async def get_ticker(self, product_code: str = "BTC_JPY") -> Ticker:
         """通貨の概要を取得する。"""
         res = await self.request_private(
@@ -189,9 +192,9 @@ class BitflyerPublicAPI:
             path="/v1/ticker",
             body=create_params(product_code=product_code),
         )
-        return res.text
+        dic = json.loads(res.text)
+        return parse_obj_as(Ticker, dic)
 
-    @decorators.Decode
     async def get_executions(
         self,
         product_code: str = "BTC_JPY",
@@ -205,7 +208,7 @@ class BitflyerPublicAPI:
             path="/v1/executions",
             body=create_params(product_code=product_code),
         )
-        return res.text
+        return json.loads(res.text)
 
     @decorators.Decode
     async def get_boradstate(self, product_code: str = "BTC_JPY"):
@@ -217,7 +220,6 @@ class BitflyerPublicAPI:
         )
         return res.text
 
-    @decorators.Decode
     async def get_health(self, product_code: str = "BTC_JPY"):
         """
         取引所の状態を取得する。
@@ -227,59 +229,52 @@ class BitflyerPublicAPI:
             path="/v1/gethealth",
             body=create_params(product_code=product_code),
         )
-        return res.text
+        return json.loads(res.text)
 
-    @decorators.Decode
     async def get_chats(self, from_date):
         """チャットの発言一覧を取得します。"""
         res = await self.request_private(
             method="GET", path="/v1/getchats", body=create_params(from_date=from_date)
         )
-        return res.text
+        return json.loads(res.text)
 
 
 class BitflyerPrivateAPI(BitflyerPublicAPI):
-    @decorators.Decode
     async def get_permissions(self):
         """API キーの権限を取得する。"""
         res = await self.request_private(
             method="GET", path="/v1/me/getpermissions", body=dict()
         )
-        return res.text
+        return json.loads(res.text)
 
-    @decorators.Decode
     async def get_balance(self):
         """資産残高を取得する。"""
         res = await self.request_private(
             method="GET", path="/v1/me/getbalance", body=dict()
         )
-        return res.text
+        return json.loads(res.text)
 
-    @decorators.Decode
     async def get_collateral(self):
         """証拠金の状態を取得する。"""
         res = await self.request_private(
             method="GET", path="/v1/me/getcollateral", body=dict()
         )
-        return res.text
+        return json.loads(res.text)
 
-    @decorators.Decode
     async def get_collateralaccounts(self):
         """通貨別の証拠金数量を取得する。"""
         res = await self.request_private(
             method="GET", path="/v1/me/getcollateralaccounts", body=dict()
         )
-        return res.text
+        return json.loads(res.text)
 
-    @decorators.Decode
     async def get_address(self):
         """仮想通貨を bitFlyer アカウントに預入るためのアドレスを取得します。"""
         res = await self.request_private(
             method="GET", path="/v1/me/getaddresses", body=dict()
         )
-        return res.text
+        return json.loads(res.text)
 
-    @decorators.Decode
     async def get_coinins(
         self, count: int = 100, before: int = None, after: int = None
     ):
@@ -289,16 +284,14 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
             path="/v1/me/getcoinins",
             body=create_params(count=count, before=before, after=after),
         )
-        return res.text
+        return json.loads(res.text)
 
-    @decorators.Decode
     async def get_bankaccounts(self):
         res = await self.request_private(
             method="GET", path="/v1/me/getbankaccounts", body=dict()
         )
-        return res.text
+        return json.loads(res.text)
 
-    @decorators.Decode
     async def get_deposits(
         self, count: int = 100, before: int = None, after: int = None
     ):
@@ -307,9 +300,8 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
             path="/v1/me/getdeposits",
             body=create_params(count=count, before=before, after=after),
         )
-        return res.text
+        return json.loads(res.text)
 
-    @decorators.Decode
     async def post_withdraw(
         self,
         bank_account_id: int,
@@ -328,9 +320,8 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
                 code=code,
             ),
         )
-        return res.text
+        return json.loads(res.text)
 
-    @decorators.Decode
     async def post_withdrawals(
         self, count: int = 100, before: int = None, after: int = None
     ):
@@ -340,9 +331,8 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
             path="/v1/me/getwithdrawals",
             body=create_params(count=count, before=before, after=after),
         )
-        return res.text
+        return json.loads(res.text)
 
-    @decorators.Decode
     async def post_sendchildorder(
         self,
         product_code: str,
@@ -367,9 +357,8 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
         res = await self.request_private(
             method="POST", path="/v1/me/sendchildorder", body=body
         )
-        return res.text
+        return json.loads(res.text)
 
-    @decorators.Decode
     async def post_cancelchildorder(
         self,
         product_code: str,
@@ -386,9 +375,8 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
         res = await self.request_private(
             method="POST", path="/v1/me/cancelchildorder", body=body
         )
-        return res.text
+        return json.loads(res.text)
 
-    @decorators.Decode
     async def post_sendparentorder(
         self,
         order_method: Literal["SIMPLE", "IFD", "OCO", "IFDOCO"] = "SIMPLE",
@@ -409,27 +397,29 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
         res = await self.request_private(
             method="POST", path="/v1/me/sendparentorder", body=body
         )
-        return res.text
+        return json.loads(res.text)
 
-    @decorators.Decode
     async def post_cancelparentorder(
         self,
         product_code: str,
-        child_order_id: int = None,
-        chile_order_acceptance_id=None,
-    ):
+        parent_order_id: int = None,
+        parent_order_acceptance_id=None,
+    ) -> Literal[""]:
+        """親注文をキャンセルする。キャンセルはべき等性で応答が返り、何度実行してもOKが返る"""
         body = create_params(
             product_code=product_code,
-            child_order_id=child_order_id,
-            chile_order_acceptance_id=chile_order_acceptance_id,
+            parent_order_id=parent_order_id,
+            parent_order_acceptance_id=parent_order_acceptance_id,
         )
 
         res = await self.request_private(
-            method="POST", path="/v1/me/cancelchildorder", body=body
+            method="POST", path="/v1/me/cancelparentorder", body=body
         )
-        return res.text
+        return res.text  # 空テキストでjson.loads失敗が失敗するため、単に空テキストを返す
 
-    @decorators.Decode
+    async def post_cancelchildorder(self):
+        raise NotImplementedError()
+
     async def post_cancelallchildorders(
         self,
         product_code: str,
@@ -442,9 +432,8 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
         res = await self.request_private(
             method="POST", path="/v1/me/cancelallchildorders", body=body
         )
-        return res.text
+        return json.loads(res.text)
 
-    @decorators.Decode
     async def get_childorders(
         self,
         product_code: str,
@@ -473,16 +462,15 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
         res = await self.request_private(
             method="GET", path="/v1/me/getchildorders", body=body
         )
-        return res.text
+        return json.loads(res.text)
 
-    @decorators.Decode
     async def get_parentorders(
         self,
         product_code: str,
         count: int = 100,
         before: int = None,
         after: int = None,
-        chiled_order_state: Literal[
+        parent_order_state: Literal[
             "ACTIVE", "COMPLETED", "CANCELED", "EXPIRED", "REJECTED"
         ] = None,
     ):
@@ -492,30 +480,28 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
             count=count,
             before=before,
             after=after,
-            chiled_order_state=chiled_order_state,
+            parent_order_state=parent_order_state,
         )
 
         res = await self.request_private(
-            method="POST", path="/v1/me/getparentorders", body=body
+            method="GET", path="/v1/me/getparentorders", body=body
         )
-        return res.text
+        return json.loads(res.text)
 
-    @decorators.Decode
     async def get_parentorder(
-        self, child_order_id: int = None, child_order_acceptance_id: str = None
+        self, parent_order_id: int = None, parent_order_acceptance_id: str = None
     ):
         """親注文の詳細を取得する。"""
         body = create_params(
-            child_order_id=child_order_id,
-            child_order_acceptance_id=child_order_acceptance_id,
+            parent_order_id=parent_order_id,
+            parent_order_acceptance_id=parent_order_acceptance_id,
         )
 
         res = await self.request_private(
-            method="POST", path="/v1/me/getparentorder", body=body
+            method="GET", path="/v1/me/getparentorder", body=body
         )
-        return res.text
+        return json.loads(res.text)
 
-    @decorators.Decode
     async def get_executions(
         self,
         product_code: str,
@@ -538,9 +524,8 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
         res = await self.request_private(
             method="GET", path="/v1/me/getexecutions", body=body
         )
-        return res.text
+        return json.loads(res.text)
 
-    @decorators.Decode
     async def get_balancehistory(
         self,
         currency_code: str = "JPY",
@@ -559,9 +544,8 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
         res = await self.request_private(
             method="GET", path="/v1/me/getbalancehistory", body=body
         )
-        return res.text
+        return json.loads(res.text)
 
-    @decorators.Decode
     async def get_positions(
         self,
         product_code: str = "FX_BTC_JPY",
@@ -574,9 +558,8 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
         res = await self.request_private(
             method="GET", path="/v1/me/getpositions", body=body
         )
-        return res.text
+        return json.loads(res.text)
 
-    @decorators.Decode
     async def get_collateralhistory(
         self, count: int = 100, before: int = None, after: int = None
     ):
@@ -586,9 +569,8 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
         res = await self.request_private(
             method="GET", path="/v1/me/getcollateralhistory", body=body
         )
-        return res.text
+        return json.loads(res.text)
 
-    @decorators.Decode
     async def get_tradingcommission(self, product_code: str):
         """取引手数料を取得する。"""
         body = create_params(product_code=product_code)
@@ -596,7 +578,7 @@ class BitflyerPrivateAPI(BitflyerPublicAPI):
         res = await self.request_private(
             method="GET", path=f"/v1/me/gettradingcommission", body=body
         )
-        return res.text
+        return json.loads(res.text)
 
 
 class BitflyerAPI(BitflyerPrivateAPI):

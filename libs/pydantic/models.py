@@ -7,7 +7,7 @@ from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel as PydanticModel
 from pydantic import BaseSettings as PydanticSettings
 
-from .utils import generate_funnel
+# from .utils import generate_funnel
 
 alias_all = {
     "False_": "False",
@@ -174,21 +174,21 @@ class MixinModel:
 
         return new_type
 
-    @classmethod
-    def as_func(cls):
-        """
-        モデル属性を関数の引数にマップした関数を生成します。
-        これは、fastapiがpydanticをクエリとして理解しないため、関数に変換しクエリとして解釈されるように利便性を高めるために定義しました。
-        モデルは以下のように解釈されます。
+    # @classmethod
+    # def as_func(cls):
+    #     """
+    #     モデル属性を関数の引数にマップした関数を生成します。
+    #     これは、fastapiがpydanticをクエリとして理解しないため、関数に変換しクエリとして解釈されるように利便性を高めるために定義しました。
+    #     モデルは以下のように解釈されます。
 
-        class A(BaseModel):
-          name: str
-          age: int = 20
+    #     class A(BaseModel):
+    #       name: str
+    #       age: int = 20
 
-        def create_A(name: str, age: int = 20):
-            return A(name=name, age=age)
-        """
-        return generate_funnel(cls)
+    #     def create_A(name: str, age: int = 20):
+    #         return A(name=name, age=age)
+    #     """
+    #     return generate_funnel(cls)
 
 
 class BaseModel(MixinModel, PydanticModel):

@@ -406,11 +406,9 @@ from inflector import Inflector
 class Entity:
     @declared_attr
     def __tablename__(cls):
-        """クラス名からスネークケースのテーブル名を生成する"""
+        """クラス名から複数形スネークケースのテーブル名を生成する"""
         inflector = Inflector()
         return inflector.tableize(cls.__name__)
-        # names = re.split("(?=[A-Z])", cls.__name__)  # noqa
-        # return "_".join([x.lower() for x in names if x])
 
     @classmethod
     def __declare_last__(cls):

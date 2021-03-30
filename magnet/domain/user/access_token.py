@@ -8,7 +8,7 @@ from fastapi.security import (
     SecurityScopes,
 )
 from passlib.context import CryptContext
-from pydantic import BaseModel, SecretStr
+from pydantic import BaseModel
 
 from framework import DateTimeAware
 

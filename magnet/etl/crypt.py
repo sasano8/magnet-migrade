@@ -17,7 +17,7 @@ async def daily_update_crypto_pair(db: Session) -> BulkResult:
     指定した条件のデータを削除した後、指定したデータを登録する。（洗い替え方式）
     戻り値に削除件数と登録件数を返す。
     """
-    from ..trade_api.exchanges.cryptowatch import CryptowatchAPI
+    from trade_api.exchanges.cryptowatch import CryptowatchAPI
 
     m = models.CryptoPair
     provider = "cryptowatch"
@@ -62,7 +62,7 @@ class CryptoWatchOhlcExtractor(JobBase):
         return f"{self.provider} {self.market} {self.product} {self.periods}"
 
     async def __call__(self, db: Session) -> BulkResult:
-        from ..trade_api.exchanges.cryptowatch import CryptowatchAPI
+        from trade_api.exchanges.cryptowatch import CryptowatchAPI
 
         data = await CryptowatchAPI().list_ohlc(
             market=self.market,

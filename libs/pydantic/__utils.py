@@ -1,4 +1,3 @@
-import functools
 from typing import Any, Literal, Type
 
 from pydantic import BaseModel
