@@ -144,15 +144,30 @@ class TopicProvider(HasName):
 
 class Analyzer(HasName):
     __topics__: List[str] = []
+    invert: bool = False
 
-    def __init__(self):
+    def __init__(self, invert: bool = False):
+        self.invert = invert
         self.__post_init__()
 
     def __post_init__(self):
         pass
 
+    async def analyze(self, topic):
+        raise NotImplementedError()
+
     async def __call__(self, topic):
-        pass
+        """トピックに対する分析を行う。invert（反転）オプションが有効な時は、BUYとSELLを反転させる。"""
+        msg = await self.analyze(topic)
+        if not self.invert:
+            return msg
+
+        if msg.buy_and_sell == BuyAndSellSignal.BUY:
+            msg.buy_and_sell = BuyAndSellSignal.SELL
+        elif msg.buy_and_sell == BuyAndSellSignal.SELL:
+            msg.buy_and_sell = BuyAndSellSignal.BUY
+
+        return msg
 
 
 class TestBroker:

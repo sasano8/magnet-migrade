@@ -4,7 +4,9 @@ from ...database import Base
 
 
 class Dummy(Base):
-    __tablename__ = "dummy"
+    """検証用に使うテーブルです。sqlalchemyの挙動確認テストでのみ使用してしています。"""
+
+    # __tablename__ = "dummy"
     id = sa.Column(sa.Integer, primary_key=True)
     name = sa.Column(
         sa.String(255),
@@ -23,4 +25,4 @@ class Dummy(Base):
         comment="timezoneを保持します。オフセットのみ保持し、timezone名は保持しません。",
     )
 
-    __table_args__ = {"comment": "検証用に使うテーブルです。sqlalchemyの挙動確認テストでのみ使用してしています。"}
+    # __table_args__ = {"comment": "検証用に使うテーブルです。sqlalchemyの挙動確認テストでのみ使用してしています。"}

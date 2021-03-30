@@ -1,3 +1,4 @@
+import inspect
 import os
 
 import typer
@@ -62,21 +63,33 @@ def migrate():
 
 @command
 def export_spec(
-    er_file_path: str = "doc/er.png", tables_file_path: str = "doc/tables.md"
+    er_file_path: str = "doc/er.png",
+    tables_file_path: str = "doc/tables.md",
+    openapi_file_path: str = "doc/openapi.yml",
 ):
     """テーブル一覧とER図を生成します。"""
     import eralchemy
+    import yaml
 
+    from magnet.__main import app as fastapi
     from magnet.database import Base
 
     eralchemy.render_er(Base, er_file_path)
     typer.echo(f"generated {er_file_path=}")
 
+    # TODO: sqlalchemy1.4で動かない。ライブラリがマージされるか、ソースを無理やり書き換えて動かす
+    # https://github.com/Alexis-benoist/eralchemy/issues/80
     markdown = get_table_define_as_markdown(Base)
     with open(tables_file_path, mode="w") as f:
         f.write(markdown)
 
     typer.echo(f"generated {tables_file_path=}")
+
+    openapi = fastapi.openapi()
+    with open(openapi_file_path, mode="w") as f:
+        yaml.dump(openapi, f, allow_unicode=True)
+
+    typer.echo(f"generated {openapi_file_path=}")
 
 
 # utils
@@ -137,7 +150,8 @@ def get_table_define_as_markdown(base):
             "| name | type | pk | unique | index | nullable | default | comment |"
         )
         arr.append("| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |")
-        for column in table._columns.values():
+        # for column in table._columns.values():  # sqlalchemy1.3
+        for column in table._columns._colset:  # sqlalchemy^1.4
 
             dic = create_column_info_as_dict(
                 name=column.name,
@@ -170,8 +184,11 @@ def create_column_info_as_dict(
             return value
 
     def get_str_or_ohter(value):
-        if isinstance(value, str) and value == "":
-            return '""'
+        if isinstance(value, str):
+            return value if value else "Blank"
+
+        if inspect.isfunction(value):
+            return value.__name__ + "()"
 
         return value
 

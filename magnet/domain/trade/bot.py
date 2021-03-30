@@ -45,10 +45,14 @@ class Bot:
     @staticmethod
     def build(profile: TradeProfile):
         """profileから自動売買に必要なインスタンスを生成する"""
-        analyzer_types: Set[Type[Analyzer]] = set()
+        # analyzer_types: Set[Type[Analyzer]] = set()
+        analyzers = []
         for analyzer_name in profile.analyzers:
-            analyzer = AnalyzersRepository.get(analyzer_name=analyzer_name)
-            analyzer_types.add(analyzer)
+            # analyzer = AnalyzersRepository.get(analyzer_name=analyzer_name)
+            # analyzer_types.add(analyzer)
+            analyzers.append(
+                AnalyzersRepository.instantiate(analyzer_name=analyzer_name)
+            )
 
         # テスト時は仮のtickerにする
         if True:
@@ -56,7 +60,9 @@ class Bot:
         else:
             topic_names = set(["test_current_ticker"])
 
-        for analyzer in analyzer_types:
+        # for analyzer in analyzer_types:
+        #     topic_names.update(analyzer.__topics__)
+        for analyzer in analyzers:
             topic_names.update(analyzer.__topics__)
 
         broker = BrokerRepository.get(profile.market)()
@@ -66,9 +72,9 @@ class Bot:
             factory = TopicRepository.get(topic_name)
             topics.append(factory(profile, broker))
 
-        analyzers = []
-        for analyzer_type in analyzer_types:
-            analyzers.append(analyzer_type())
+        # analyzers = []
+        # for analyzer_type in analyzer_types:
+        #     analyzers.append(analyzer_type())
 
         return broker, topics, analyzers
 
@@ -222,17 +228,42 @@ class Bot:
 
         self.state = TradeBot(**new_state)
 
-    # def clear_state(self):
-    #     """状態をクリーンにする"""
-    #     state = self.state
-
-    #     for db in get_db():
-    #         new_state = db.execute(state.stmt_reset().returning(TradeBot)).one()
-
-    #     self.state = TradeBot(**new_state)
-
     async def entry_order(self, order: PreOrder, current_dt: DateTimeAware):
-        """ブローカーに注文を依頼し、受理レスポンスをエントリー売買として記録する。"""
+        """
+        ブローカーに注文を依頼し、受理レスポンスをエントリー売買として記録する。
+        """
+        if order.size == 0:
+            return
+
+        state = self.state
+        localized_order = self.broker.localize_order(order)
+
+        from sqlalchemy import insert
+
+        from .models import TradeOrder
+
+        for db in get_db():
+            accepted_data = await self.broker.order(localized_order)
+
+            values = state.dict()
+            del values["id"]
+            values["product_code"] = order.product_code
+            values["entry_at"] = current_dt
+            values["entry_order"] = order.dict()
+            values["entry_order_accepted"] = accepted_data
+
+            stmt = insert(TradeOrder).values(
+                **values,
+            )
+            new_state = db.execute(stmt)
+
+        # self.state = TradeBot(**new_state)  # 投げっぱなしなので状態として管理しない
+
+    async def entry_order_continuous(self, order: PreOrder, current_dt: DateTimeAware):
+        """
+        ブローカーに注文を依頼し、受理レスポンスをエントリー売買として記録する。
+        また、その注文をドテン売買など連続的な注文として扱う。
+        """
         if order.size == 0:
             return
 
@@ -359,6 +390,7 @@ class Bot:
             return
 
         if not state.is_empty:
+
             await self.cancel_order()
             await self.finalize_entry_order()
             remain = self.get_remain()
@@ -390,23 +422,36 @@ class Bot:
             return
 
         size = PreOrder.calc_amount(
-            budget=Decimal("100000"),
+            budget=profile.margin,
             price=decision.target_price,
             min_unit=Decimal("0.01"),  # TODO: budgetをprofileにもたせる
         )
+
+        if side == 1:
+            limit_rate = profile.ask_limit_rate
+            stop_rate = profile.ask_stop_rate
+        elif side == -1:
+            limit_rate = profile.bid_limit_rate
+            stop_rate = profile.bid_stop_rate
+        else:
+            raise Exception()
 
         order = PreOrder(
             product_code=profile.product,
             side=side,
             target_price=decision.target_price,
             size=size,
-            limit_rate=profile.limit_rate,
-            stop_rate=profile.stop_rate,
+            limit_rate=limit_rate,
+            stop_rate=stop_rate,
             # limit_rate=1.2,
             # stop_rate=0.9,
         )
 
-        await self.entry_order(order, current_dt)
+        if state.is_stop_reverse:
+            await self.entry_order_continuous(order, current_dt)
+        else:
+            await self.entry_order(order, current_dt)
+
         print(self.state)
 
     @staticmethod

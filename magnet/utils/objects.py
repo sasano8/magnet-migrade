@@ -18,8 +18,10 @@ from typing import (
 
 from fastapi import HTTPException, status
 from pydantic import BaseModel
-from sqlalchemy import Column, inspect, or_, select, update
+from sqlalchemy import Column, event, inspect, or_, select, update
+from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import Query, Session, load_only, make_transient
+from sqlalchemy.sql.expression import insert
 
 from framework import undefined
 
@@ -398,7 +400,30 @@ class MyQuery(Query):
         return super().filter_by(**kwargs)
 
 
+from inflector import Inflector
+
+
 class Entity:
+    @declared_attr
+    def __tablename__(cls):
+        """クラス名からスネークケースのテーブル名を生成する"""
+        inflector = Inflector()
+        return inflector.tableize(cls.__name__)
+        # names = re.split("(?=[A-Z])", cls.__name__)  # noqa
+        # return "_".join([x.lower() for x in names if x])
+
+    @classmethod
+    def __declare_last__(cls):
+        """
+        configure_mappers呼び出し時に、いくつかのtable_argsを自動で設定する。
+        - comment: クラスのdocstringを自動で設定
+        """
+        dic = cls.__table__.__dict__
+        # docstringをテーブルのコメントとする
+        if dic.get("comment", None) is None:
+            if cls.__doc__:
+                dic["comment"] = cls.__doc__
+
     @classmethod
     def select(cls, *columns: Union[str, Column]) -> select:
         if columns:
@@ -469,3 +494,19 @@ class Entity:
 
         # return Service
         return cls.as_rep().as_service()
+
+    def dict(self, excludes=set()):
+        dic = {c.key: getattr(self, c.key) for c in inspect(self).mapper.column_attrs}
+        for name in excludes:
+            dic.pop(name, None)
+        return dic
+
+
+# def update_tarble_args(cls: Type[Entity]):
+#     @event.listens_for(cls, "class_instrument")
+#     def __update_table_args__(cls):
+#         dic = cls.__table__.__dict__
+
+#         if dic.get("comment", None) is None:
+#             if cls.__doc__:
+#                 dic["comment"] = cls.__doc__

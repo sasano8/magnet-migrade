@@ -2,6 +2,7 @@ from decimal import Decimal
 from typing import List
 
 from sqlalchemy import select
+from sqlalchemy.orm import Query
 
 from pytrade.portfolio import AskBid, PositionStatus
 
@@ -14,14 +15,17 @@ from .repository import AnalyzersRepository, BrokerRepository, TopicRepository
 
 @intellisense
 class CreateTradeBot(BaseModel):
+    name: str = "bot_name"
+    description: str = ""
     provider: str = "cryptowatch"
     market: str = "bitflyer"
-    product: str = "FX_BTC_JPY"
+    product: str = "btcfxjpy"
     periods: Decimal = 60 * 60 * 24  # type: ignore
-    # ask_or_bid: AskBid
-    limit_rate: Decimal = None  # type: ignore
-    stop_rate: Decimal = None  # type: ignore
-    analyzers: List[str] = ["empty"]
+    analyzers: List[str] = ["t_cross"]
+    ask_limit_rate: Decimal = Decimal("1.2")
+    ask_stop_rate: Decimal = Decimal("0.95")
+    bid_limit_rate: Decimal = Decimal("0.85")
+    bid_stop_rate: Decimal = Decimal("1.05")
 
     def do(self, db: Session):
         obj = TradeProfile(**self.dict())

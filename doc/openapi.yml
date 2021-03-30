@@ -1,0 +1,914 @@
+components:
+  schemas:
+    Body_login_user_guest_login_post:
+      properties:
+        client_id:
+          title: Client Id
+          type: string
+        client_secret:
+          title: Client Secret
+          type: string
+        grant_type:
+          pattern: password
+          title: Grant Type
+          type: string
+        password:
+          title: Password
+          type: string
+        scope:
+          default: ''
+          title: Scope
+          type: string
+        username:
+          title: Username
+          type: string
+      required:
+      - username
+      - password
+      title: Body_login_user_guest_login_post
+      type: object
+    CreateTradeBot:
+      additionalProperties: false
+      properties:
+        analyzers:
+          default:
+          - t_cross
+          items:
+            type: string
+          title: Analyzers
+          type: array
+        ask_limit_rate:
+          default: 1.2
+          title: Ask Limit Rate
+          type: number
+        ask_stop_rate:
+          default: 0.95
+          title: Ask Stop Rate
+          type: number
+        bid_limit_rate:
+          default: 0.85
+          title: Bid Limit Rate
+          type: number
+        bid_stop_rate:
+          default: 1.05
+          title: Bid Stop Rate
+          type: number
+        description:
+          default: ''
+          title: Description
+          type: string
+        market:
+          default: bitflyer
+          title: Market
+          type: string
+        name:
+          default: bot_name
+          title: Name
+          type: string
+        periods:
+          default: 86400
+          title: Periods
+          type: number
+        product:
+          default: btcfxjpy
+          title: Product
+          type: string
+        provider:
+          default: cryptowatch
+          title: Provider
+          type: string
+      title: CreateTradeBot
+      type: object
+    DummyCreate:
+      additionalProperties: false
+      properties:
+        date_aware:
+          format: date-time
+          title: Date Aware
+          type: string
+        date_naive:
+          format: date-time
+          title: Date Naive
+          type: string
+        name:
+          title: Name
+          type: string
+      required:
+      - name
+      title: DummyCreate
+      type: object
+    DummyPatch:
+      additionalProperties: false
+      properties:
+        date_aware:
+          format: date-time
+          title: Date Aware
+          type: string
+        date_naive:
+          format: date-time
+          title: Date Naive
+          type: string
+        id:
+          title: Id
+          type: integer
+        name:
+          title: Name
+          type: string
+      title: DummyPatch
+      type: object
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          title: Detail
+          type: array
+      title: HTTPValidationError
+      type: object
+    Item:
+      additionalProperties: false
+      properties:
+        description:
+          title: Description
+          type: string
+        id:
+          title: Id
+          type: integer
+        owner_id:
+          title: Owner Id
+          type: integer
+        title:
+          title: Title
+          type: string
+      required:
+      - id
+      - title
+      - owner_id
+      title: Item
+      type: object
+    ModifyPassword:
+      additionalProperties: false
+      properties:
+        password:
+          format: password
+          title: Password
+          type: string
+          writeOnly: true
+      required:
+      - password
+      title: ModifyPassword
+      type: object
+    RegisterFirstAdmin:
+      additionalProperties: false
+      properties:
+        email:
+          title: Email
+          type: string
+        password:
+          format: password
+          title: Password
+          type: string
+          writeOnly: true
+      required:
+      - password
+      - email
+      title: RegisterFirstAdmin
+      type: object
+    RegisterUser:
+      additionalProperties: false
+      properties:
+        email:
+          title: Email
+          type: string
+        password:
+          format: password
+          title: Password
+          type: string
+          writeOnly: true
+      required:
+      - password
+      - email
+      title: RegisterUser
+      type: object
+    Token:
+      additionalProperties: false
+      properties:
+        access_token:
+          title: Access Token
+          type: string
+        token_type:
+          title: Token Type
+          type: string
+      required:
+      - access_token
+      - token_type
+      title: Token
+      type: object
+    User:
+      additionalProperties: false
+      properties:
+        disabled:
+          title: Disabled
+          type: boolean
+        email:
+          title: Email
+          type: string
+        full_name:
+          title: Full Name
+          type: string
+        id:
+          title: Id
+          type: integer
+        is_active:
+          title: Is Active
+          type: boolean
+        items:
+          default: []
+          items:
+            $ref: '#/components/schemas/Item'
+          title: Items
+          type: array
+        username:
+          title: Username
+          type: string
+      required:
+      - id
+      - email
+      - username
+      - is_active
+      title: User
+      type: object
+    ValidationError:
+      properties:
+        loc:
+          items:
+            type: string
+          title: Location
+          type: array
+        msg:
+          title: Message
+          type: string
+        type:
+          title: Error Type
+          type: string
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+      type: object
+  securitySchemes:
+    OAuth2PasswordBearer:
+      flows:
+        password:
+          scopes:
+            items: Read items.
+            me: Read information about the current user.
+          tokenUrl: /guest/login
+      type: oauth2
+info:
+  title: FastAPI
+  version: 0.1.0
+openapi: 3.0.2
+paths:
+  /:
+    get:
+      operationId: root__get
+      responses:
+        '200':
+          content:
+            text/html:
+              schema:
+                type: string
+          description: Successful Response
+      summary: Root
+  /bot/capability:
+    get:
+      operationId: get_capabilities_bot_capability_get
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+      summary: Get Capabilities
+  /bot/etl/load_all:
+    post:
+      operationId: load_all_bot_etl_load_all_post
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+      summary: Load All
+  /bot/profile:
+    post:
+      operationId: create_bot_bot_profile_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTradeBot'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Create Bot
+  /bot/profile/{profile_id}:
+    get:
+      operationId: get_bot_bot_profile__profile_id__get
+      parameters:
+      - in: path
+        name: profile_id
+        required: true
+        schema:
+          title: Profile Id
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Get Bot
+  /bot/profile/{profile_id}/deal:
+    get:
+      description: BOTに自動売買させる。テスト用
+      operationId: deal_bot_bot_profile__profile_id__deal_get
+      parameters:
+      - in: path
+        name: profile_id
+        required: true
+        schema:
+          title: Profile Id
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Deal Bot
+  /bot/profile/{profile_id}/switch:
+    post:
+      description: BotのOnOffを切り替えます。
+      operationId: switch_bot_bot_profile__profile_id__switch_post
+      parameters:
+      - in: path
+        name: profile_id
+        required: true
+        schema:
+          title: Profile Id
+          type: integer
+      - in: query
+        name: is_active
+        required: true
+        schema:
+          title: Is Active
+          type: boolean
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Switch Bot
+  /develop/json_to_pydantic:
+    post:
+      operationId: json_to_pydantic_develop_json_to_pydantic_post
+      parameters:
+      - in: query
+        name: json
+        required: false
+        schema:
+          default: '{}'
+          title: Json
+          type: string
+      responses:
+        '200':
+          content:
+            text/plain:
+              schema:
+                type: string
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Json To Pydantic
+  /guest/login:
+    post:
+      operationId: login_user_guest_login_post
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Body_login_user_guest_login_post'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Login User
+  /guest/register:
+    post:
+      operationId: register_user_guest_register_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterUser'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Register User
+  /guest/register_first_admin:
+    post:
+      description: アプリケーション初期化状態の時、管理者ユーザーを作成します
+      operationId: register_first_admin_guest_register_first_admin_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterFirstAdmin'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Register First Admin
+  /me/:
+    delete:
+      operationId: withdraw_me_me__delete
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                title: Response Withdraw Me Me  Delete
+                type: integer
+          description: Successful Response
+      security:
+      - OAuth2PasswordBearer:
+        - me
+        - me
+      summary: Withdraw Me
+    get:
+      operationId: get_me_me__get
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: Successful Response
+      security:
+      - OAuth2PasswordBearer:
+        - me
+        - me
+      summary: Get Me
+  /me/admin_or_power:
+    get:
+      operationId: get_me_if_admin_or_power_me_admin_or_power_get
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: Successful Response
+      security:
+      - OAuth2PasswordBearer: []
+      summary: Get Me If Admin Or Power
+  /me/logout:
+    post:
+      operationId: logout_me_me_logout_post
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+      security:
+      - OAuth2PasswordBearer: []
+      summary: Logout Me
+  /me/modify_password:
+    patch:
+      operationId: modify_password_me_me_modify_password_patch
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModifyPassword'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - OAuth2PasswordBearer:
+        - me
+        - me
+      summary: Modify Password Me
+  /scaffold/:
+    get:
+      operationId: index_scaffold__get
+      parameters:
+      - in: query
+        name: from
+        required: false
+        schema:
+          default: 0
+          title: From
+          type: integer
+      - in: query
+        name: limit
+        required: false
+        schema:
+          default: 100
+          title: Limit
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Index
+    post:
+      operationId: create_scaffold__post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DummyCreate'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Create
+  /scaffold/{id}:
+    get:
+      operationId: get_scaffold__id__get
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          title: Id
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Get
+  /scaffold/{id}/copy:
+    post:
+      operationId: copy_scaffold__id__copy_post
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          title: Id
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Copy
+  /scaffold/{id}/delete:
+    delete:
+      operationId: delete_scaffold__id__delete_delete
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          title: Id
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Delete
+  /scaffold/{id}/patch:
+    patch:
+      operationId: patch_scaffold__id__patch_patch
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          title: Id
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DummyPatch'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Patch
+  /system/requirement_definition:
+    get:
+      operationId: requirement_definition_system_requirement_definition_get
+      parameters:
+      - description: 社内向けですか？世界に公開するサービスですか。
+        in: query
+        name: domain
+        required: false
+        schema:
+          default: internal
+          description: 社内向けですか？世界に公開するサービスですか。
+          title: Domain
+          type: string
+      - description: utc以外のタイムゾーンを取り扱いますか。
+        in: query
+        name: timezone
+        required: false
+        schema:
+          default: utc
+          description: utc以外のタイムゾーンを取り扱いますか。
+          title: Timezone
+          type: string
+      - description: 現地時間の情報を個別に保持したい要件がありますか。
+        in: query
+        name: has_timezone
+        required: false
+        schema:
+          default: false
+          description: 現地時間の情報を個別に保持したい要件がありますか。
+          title: Has Timezone
+          type: boolean
+      - description: システムで取り扱うことを想定している一番古い日付は何年ですか。
+        in: query
+        name: most_old_year
+        required: false
+        schema:
+          default: 1905
+          description: システムで取り扱うことを想定している一番古い日付は何年ですか。
+          title: Most Old Year
+          type: integer
+      - description: スクレイピングを用いる要件はありますか。
+        in: query
+        name: scraping
+        required: false
+        schema:
+          default: false
+          description: スクレイピングを用いる要件はありますか。
+          title: Scraping
+          type: boolean
+      - description: ETLの要件はありますか。
+        in: query
+        name: etl
+        required: false
+        schema:
+          default: false
+          description: ETLの要件はありますか。
+          title: Etl
+          type: boolean
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Requirement Definition
+  /system/statistics:
+    get:
+      operationId: get_statistics_system_statistics_get
+      parameters:
+      - in: query
+        name: filter_module
+        required: false
+        schema:
+          default: backend/app
+          title: Filter Module
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Get Statistics
+  /users/:
+    get:
+      operationId: query_user_users__get
+      parameters:
+      - in: query
+        name: from
+        required: false
+        schema:
+          default: 0
+          title: From
+          type: integer
+      - in: query
+        name: limit
+        required: false
+        schema:
+          default: 100
+          title: Limit
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/User'
+                title: Response Query User Users  Get
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - OAuth2PasswordBearer: []
+      summary: Query User
+  /users/user/{user_id}:
+    delete:
+      operationId: delete_user_users_user__user_id__delete
+      parameters:
+      - in: path
+        name: user_id
+        required: true
+        schema:
+          title: User Id
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                title: Response Delete User Users User  User Id  Delete
+                type: integer
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - OAuth2PasswordBearer: []
+      summary: Delete User
+  /users/{user_id}:
+    get:
+      operationId: get_user_users__user_id__get
+      parameters:
+      - in: path
+        name: user_id
+        required: true
+        schema:
+          title: User Id
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - OAuth2PasswordBearer: []
+      summary: Get User

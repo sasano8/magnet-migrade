@@ -61,6 +61,8 @@ def setup_database_module():
     """データベースに関連するモジュールを読み込む。"""
     import os
 
+    from sqlalchemy.orm import configure_mappers
+
     from . import database
     from .utils import importer
 
@@ -68,6 +70,7 @@ def setup_database_module():
     if not os.path.exists(cd):
         raise FileNotFoundError(cd)
     importer.import_modules(cd, ["models.py"])
+    configure_mappers()
 
 
 @setup

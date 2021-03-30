@@ -1,4 +1,5 @@
 import datetime
+import traceback
 from typing import Literal
 
 from sqlalchemy.orm import Session
@@ -18,7 +19,7 @@ async def daily_update_crypto_pair(db: Session) -> BulkResult:
     """
     from ..trade_api.exchanges.cryptowatch import CryptowatchAPI
 
-    m = models.CryptoPairs
+    m = models.CryptoPair
     provider = "cryptowatch"
 
     # extract
@@ -129,17 +130,21 @@ class CryptoWatchOhlcExtractor(JobBase):
 class SystemTradeBot(JobBase):
     """test用bot"""
 
-    profile_id: int
+    # profile_id: int
 
     async def __call__(self, db: Session) -> BulkResult:
-        from magnet.domain.order.usecase import ScheduleBot
+        from magnet.domain.trade.models import TradeBot
+        from magnet.domain.trade.usecase import ScheduleBot
 
         errors = []
 
-        try:
-            await ScheduleBot(profile_id=self.profile_id).deal(db)
-        except Exception as e:
-            errors.append(e)
+        query = db.query(TradeBot).filter(TradeBot.is_active == True)
+        for bot in query:
+            try:
+                await ScheduleBot(profile_id=bot.profile_id).deal(db)
+            except Exception as e:
+                tb = "".join(traceback.TracebackException.from_exception(e).format())
+                errors.append(tb)
 
         return BulkResult(errors=errors)
 
@@ -165,4 +170,4 @@ daily(
     )
 )
 
-daily(SystemTradeBot(profile_id=1))
+daily(SystemTradeBot())

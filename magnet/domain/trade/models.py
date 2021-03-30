@@ -1,6 +1,7 @@
 from decimal import ROUND_HALF_UP, Decimal
 
 import sqlalchemy as sa
+from sqlalchemy.ext.declarative import declared_attr
 
 from framework import DateTimeAware
 from pytrade.portfolio import AskBid, PositionStatus
@@ -12,10 +13,11 @@ from ...database import Base, Session
 
 @intellisense
 class TradeProfile(Base):
-    __tablename__ = "trade_profiles"
+    """トレード戦略を定義する"""
 
     id = sa.Column(sa.Integer, primary_key=True)
     name = sa.Column(sa.String(255), nullable=False)
+    description = sa.Column(sa.String(255), nullable=False)
     version = sa.Column(sa.Integer, nullable=False, default=1)
     # is_entry = sa.Column(sa.BOOLEAN, nullable=False)
     # is_backtest = sa.Column(sa.BOOLEAN, nullable=False)
@@ -24,11 +26,15 @@ class TradeProfile(Base):
     market = sa.Column(sa.String(255), nullable=False)
     product = sa.Column(sa.String(255), nullable=False)
     periods = sa.Column(sa.Integer, nullable=False)
+    is_stop_reverse = sa.Column(
+        sa.Boolean, nullable=False, default=False, comment="ドテン売買でポジションを乗り換え"
+    )
     analyzers = sa.Column(sa.JSON, nullable=False, default=[])
     # status = sa.Column(
     #     sa.Enum(PositionStatus), nullable=False, default=PositionStatus.REQUESTED
     # )
     # ask_or_bid = sa.Column(sa.Enum(AskBid), nullable=False)
+    margin = sa.Column(sa.DECIMAL, nullable=False, default=0)
     slippage = sa.Column(
         sa.DECIMAL,
         nullable=True,
@@ -37,8 +43,10 @@ class TradeProfile(Base):
     )
     # limit_price = sa.Column(sa.DECIMAL, nullable=True, comment="指定価格で利益を確定します。")
     # loss_price = sa.Column(sa.DECIMAL, nullable=True, comment="指定価格で損益を確定します。")
-    limit_rate = sa.Column(sa.DECIMAL, nullable=True)
-    stop_rate = sa.Column(sa.DECIMAL, nullable=True)
+    ask_limit_rate = sa.Column(sa.DECIMAL, nullable=True)
+    ask_stop_rate = sa.Column(sa.DECIMAL, nullable=True)
+    bid_limit_rate = sa.Column(sa.DECIMAL, nullable=True)
+    bid_stop_rate = sa.Column(sa.DECIMAL, nullable=True)
 
     # order_at = sa.Column(sa.DateTime(timezone=True), nullable=False)
     # order_price = sa.Column(sa.DECIMAL, nullable=False)
@@ -65,21 +73,26 @@ class TradeProfile(Base):
             return False
 
 
-@intellisense
-class TradeBot(Base):
-    __tablename__ = "trade_bots"
+class TradeBase:
     id = sa.Column(sa.Integer, primary_key=True)
-    profile_id = sa.Column(
-        sa.Integer,
-        sa.ForeignKey(
-            "trade_profiles.id",
-            onupdate="RESTRICT",
-            ondelete="RESTRICT",
-        ),
-        unique=True,
-        nullable=False,
-    )
+
+    @declared_attr
+    def profile_id(cls):
+        return sa.Column(
+            sa.Integer,
+            sa.ForeignKey(
+                "trade_profiles.id",
+                onupdate="RESTRICT",
+                ondelete="RESTRICT",
+            ),
+            unique=True,
+            nullable=False,
+        )
+
     is_active = sa.Column(sa.Boolean, nullable=False, default=False)
+    is_stop_reverse = sa.Column(
+        sa.Boolean, nullable=False, default=False, comment="ドテン売買でポジションを乗り換え"
+    )
 
     # 状態を表現するため、基本的にnullableとする
     product_code = sa.Column(sa.String(255), nullable=True)
@@ -133,6 +146,7 @@ class TradeBot(Base):
             # id
             # profile_id
             # is_active
+            # is_stop_reverse
             product_code=None,
             entry_at=None,
             entry_order=None,
@@ -157,8 +171,20 @@ class TradeBot(Base):
         )
 
 
+@intellisense
+class TradeBot(TradeBase, Base):
+    """トレード戦略を実行するBOTデータを定義します。"""
+
+
+@intellisense
+class TradeOrder(TradeBase, Base):
+    """アクティブ（発注済みかつ未クローズ）な注文を格納します。本テーブルデータは定期的なジョブによって、注文のクローズ確認が行われた後、TradeLog記録され、レコードは削除されます。"""
+
+
+@intellisense
 class TradeLog(Base):
-    __tablename__ = "trade_logs"
+    """トレードの結果を格納します。"""
+
     id = sa.Column(sa.Integer, primary_key=True)
     profile_id = sa.Column(
         sa.Integer, sa.ForeignKey("trade_profiles.id"), nullable=False

@@ -19,8 +19,6 @@ class UserRoles(str, Enum):
 
 @intellisense
 class User(Base, TimeStampMixin):
-    __tablename__ = "users"
-
     id = sa.Column(sa.Integer, primary_key=True)
     username = sa.Column(sa.String, unique=True, index=True)
     hashed_password = sa.Column(sa.String)
@@ -47,8 +45,6 @@ class User(Base, TimeStampMixin):
 
 
 class Item(Base):
-    __tablename__ = "items"
-
     id = sa.Column(sa.Integer, primary_key=True)
     title = sa.Column(sa.String, index=True)
     description = sa.Column(sa.String, index=True)
@@ -58,7 +54,6 @@ class Item(Base):
 
 
 class DenyToken(Base):
-    __tablename__ = "deny_tokens"
     id = sa.Column(sa.Integer, primary_key=True)
     token = sa.Column(sa.String(255), unique=True)
     user_name = sa.Column(sa.String(255))

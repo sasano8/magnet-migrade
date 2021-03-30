@@ -19,7 +19,7 @@ class EmptyAnalyzer(Analyzer):
     _name = "empty"
     __topics__ = []
 
-    async def __call__(self, topic):
+    async def analyze(self, topic):
         return None
 
 
@@ -30,7 +30,7 @@ class AlwaysBuyAnalyzer(Analyzer):
     _name = "always_buy"
     __topics__ = []
 
-    async def __call__(self, topic):
+    async def analyze(self, topic):
         current = topic["current_ticker"]
         last_traded_price = current.ltp
         return DealMessage(
@@ -47,7 +47,7 @@ class AlwaysCloseAnalyzer(Analyzer):
     _name = "always_close"
     __topics__ = []
 
-    async def __call__(self, topic):
+    async def analyze(self, topic):
         return DealMessage(buy_and_sell=BuyAndSellSignal.CLOSE, reason="always_close")
 
 
@@ -61,7 +61,7 @@ class TransitionalAnalyzer(Analyzer):
     def __post_init__(self):
         self.count = 0
 
-    async def __call__(self, topic):
+    async def analyze(self, topic):
         current = topic["current_ticker"]
         last_traded_price = current.ltp
         if self.count == 0:
@@ -103,7 +103,7 @@ class TCrossAnalyzer(Analyzer):
     _name = "t_cross"
     __topics__ = ["yesterday_ohlc"]
 
-    async def __call__(self, topic):
+    async def analyze(self, topic):
         ohlc = topic["yesterday_ohlc"]
         # TODO: 最新のデータを取り込んでいない場合、Noneが返る
         # その場合、どうするべきか考える

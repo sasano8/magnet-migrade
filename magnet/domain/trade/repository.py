@@ -66,5 +66,13 @@ class AnalyzersRepository:
         return cls.__analyzers__[analyzer_name]
 
     @classmethod
+    def instantiate(cls, analyzer_name: str) -> Analyzer:
+        if invert := analyzer_name.startswith("-"):
+            analyzer_name = analyzer_name.lstrip("-")
+
+        analyzer = cls.get(analyzer_name)
+        return analyzer(invert=invert)
+
+    @classmethod
     def get_names(cls):
         return [x for x in cls.__analyzers__]

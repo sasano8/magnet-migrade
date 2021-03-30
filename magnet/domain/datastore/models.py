@@ -9,8 +9,7 @@ from framework import DateTimeAware
 from ...database import Base, Session
 
 
-class CryptoPairs(Base):
-    __tablename__ = "__crypto_pairs"
+class CryptoPair(Base):
     id = sa.Column(sa.Integer, primary_key=True)
     provider = sa.Column(sa.String(255), nullable=False, default="")
     symbol = sa.Column(sa.String(255), nullable=False, unique=True)
@@ -25,7 +24,8 @@ class CryptoBase:
 
 
 class CryptoOhlc(Base, CryptoBase):
-    __tablename__ = "__crypto_ohlc_daily"
+    """外部データソースから取得したチャート"""
+
     open_time = sa.Column(sa.Date, nullable=True)
     close_time = sa.Column(sa.Date, nullable=False)
     open_price = sa.Column(sa.Float, nullable=False)
@@ -60,7 +60,6 @@ class CryptoOhlc(Base, CryptoBase):
     __table_args__ = (
         sa.UniqueConstraint("provider", "market", "product", "periods", "close_time"),
         sa.Index("uix_query", "provider", "market", "product", "periods"),
-        {"comment": "外部データソースから取得したチャート"},
     )
 
     @classmethod
@@ -139,35 +138,6 @@ class CryptoOhlc(Base, CryptoBase):
         return query.order_by(sort)
 
 
-class CryptoTradeResult(Base, CryptoBase):
-    __tablename__ = "crypto_trade_results"
-    size = sa.Column(sa.DECIMAL, nullable=False)
-    ask_or_bid = sa.Column(sa.Integer, nullable=False)
-    entry_date = sa.Column(sa.DateTime(timezone=True), nullable=False)
-    entry_close_date = sa.Column(sa.DateTime(timezone=True), nullable=False)
-    entry_side = sa.Column(sa.String(255), nullable=False)
-    entry_price = sa.Column(sa.DECIMAL, nullable=False)
-    entry_commission = sa.Column(sa.DECIMAL, nullable=False)
-    entry_reason = sa.Column(sa.String(255), nullable=False)
-    settle_date = sa.Column(sa.DateTime(timezone=True), nullable=False)
-    settle_close_date = sa.Column(sa.DateTime(timezone=True), nullable=False)
-    settle_side = sa.Column(sa.String(255), nullable=False)
-    settle_price = sa.Column(sa.DECIMAL, nullable=False)
-    settle_commission = sa.Column(sa.DECIMAL, nullable=False)
-    settle_reason = sa.Column(sa.String(255), nullable=False)
-    job_name = sa.Column(sa.String(255), nullable=False)
-    job_version = sa.Column(sa.String(255), nullable=False)
-    is_back_test = sa.Column(sa.Boolean, nullable=False, default=False)
-    close_date_interval = sa.Column(sa.Integer, nullable=False)
-    diff_profit = sa.Column(sa.DECIMAL, nullable=False)
-    diff_profit_rate = sa.Column(sa.DECIMAL, nullable=False)
-    fact_profit = sa.Column(sa.DECIMAL, nullable=False)
-
-    @classmethod
-    def P_delete_by_job_name(cls, db: Session, job_name: str) -> int:
-        return db.query(cls).filter(cls.job_name == job_name).delete()
-
-
 class WebArchiveBase:
     id = sa.Column(sa.Integer, primary_key=True)
     referer = sa.Column(sa.String(1023), nullable=True)
@@ -180,7 +150,7 @@ class WebArchiveBase:
 
 
 class Topic(Base, WebArchiveBase):
-    __tablename__ = "__topic"
+    pass
 
 
 # https://news.livedoor.com/article/detail/18946401/
@@ -205,7 +175,6 @@ class Topic(Base, WebArchiveBase):
 
 
 class EtlJobResult(Base):
-    __tablename__ = "etl_job_results"
     id = sa.Column(sa.Integer, primary_key=True)
     execute_at = sa.Column(
         sa.DateTime(timezone=True), nullable=False, default=DateTimeAware.utcnow
