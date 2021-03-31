@@ -403,11 +403,17 @@ class SignatureBuilder:
     def from_sqlalchemy_declarative_base(cls, base) -> List[SignatureBuilder]:
         from sqlalchemy.orm import mapperlib
 
-        mappers = [x for x in mapperlib._mapper_registry]
-        target_mappers = [x for x in mappers if x.selectable.metadata is base.metadata]
+        # mappers = [x for x in mapperlib._mapper_registry]
+        # target_mappers = [x for x in mappers if x.selectable.metadata is base.metadata]
+        # return [
+        #     cls.from_sqlalchemy_model(table._identity_class) for table in target_mappers
+        # ]
 
         return [
-            cls.from_sqlalchemy_model(table._identity_class) for table in target_mappers
+            cls.from_sqlalchemy_model(table._identity_class)
+            for table in base.registry.mappers  # sorted(
+            # enumerate(base.registry.mappers), key=lambda x: x[0], reverse=True
+            # )  # 定義順の逆で返ってくるっぽいので元に戻す
         ]
 
     @classmethod

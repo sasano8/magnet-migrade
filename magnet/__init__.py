@@ -50,9 +50,7 @@ def setup_logging_basic_config():
     logger.handlers = gunicorn_logger.handlers
     if __name__ == "main":
         logger.setLevel(logging.DEBUG)
-        logger.debug("bbbbbbbbb")
     else:
-        logger.debug("aaaaaaaa")
         logger.setLevel(gunicorn_logger.level)
 
 

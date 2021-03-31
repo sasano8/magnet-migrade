@@ -192,9 +192,20 @@ def test_from_sqlalchemy_model():
 
 def test_from_sqlalchemy_declarative_base():
     signatures = SignatureBuilder.from_sqlalchemy_declarative_base(Base)
-    assert [x.name for x in signatures] == ["User", "Address"]
+    signatures = sorted((x for x in signatures), key=lambda x: x.name)
+    assert [x.name for x in signatures] == ["Address", "User"]
 
     model = signatures[0]
+    fields = {x.name: x for x in model.get_fields()}
+    assert model.name == "Address"
+    assert len(fields) == 4
+    assert isinstance(fields["id"].meta, InstrumentedAttribute)
+    assert fields["id"].type_ == int
+    assert fields["email_address"].type_ is str
+    assert fields["user_id"].type_ is int
+    assert fields["user"].type_ is User
+
+    model = signatures[1]
     fields = {x.name: x for x in model.get_fields()}
     assert model.name == "User"
     assert len(fields) == 7
@@ -206,13 +217,3 @@ def test_from_sqlalchemy_declarative_base():
     assert fields["data"].type_ is dict
     assert fields["items"].type_ is list
     assert fields["addresses"].type_ is Iterable[Address]
-
-    model = signatures[1]
-    fields = {x.name: x for x in model.get_fields()}
-    assert model.name == "Address"
-    assert len(fields) == 4
-    assert isinstance(fields["id"].meta, InstrumentedAttribute)
-    assert fields["id"].type_ == int
-    assert fields["email_address"].type_ is str
-    assert fields["user_id"].type_ is int
-    assert fields["user"].type_ is User

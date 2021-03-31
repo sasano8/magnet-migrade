@@ -1,15 +1,17 @@
 import asyncio
 
-from magnet.domain.order import Broker
+from magnet.domain.trade.abc import TestBroker
+from magnet.domain.trade.brokers import BitflyerBroker
 
 
 def test_bitfflyer():
-    # return  # テストする時にのみ外してください
+    return  # テストする時にのみ外してください
 
     async def main():
-        broker = Broker("bitflyer")
+        broker = BitflyerBroker("key", "secret")
+        test_broker = TestBroker(broker=broker)
         # markets = await broker.get_markets()
         # print(markets)
-        result = await broker.run_test(timeout=100)
+        result = await test_broker.run_test(timeout=100)
 
     asyncio.run(main())

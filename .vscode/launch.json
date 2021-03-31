@@ -16,7 +16,7 @@
           "remoteRoot": "."
         }
       ],
-      "justMyCode": true, // 外部ライブラリ等もデバッグする
+      "justMyCode": false, // 外部ライブラリ等もデバッグする
     }
   ]
 }

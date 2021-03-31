@@ -235,7 +235,7 @@ def test_aware_date_value():
 
     # Asia/Tokyoの2020/1/1 9:00~ の日付は UTC 2020/1/1と等しいこと
     expected = datetime.datetime(
-        year=2019, month=12, day=31, tzinfo=datetime.timezone.utc
+        year=2020, month=1, day=1, tzinfo=datetime.timezone.utc
     )
     tz = pytz.timezone("Asia/Tokyo")
     tokyo = tz.localize(
@@ -243,9 +243,8 @@ def test_aware_date_value():
             year=2020, month=1, day=1, hour=9, minute=10, second=11, microsecond=123456
         )
     )
-    assert (
-        expected == Model(date_utc=tokyo).date_utc
-    )  # 2020/1/1+9:00をUTCにすると2019/12/31 15:00 +0:00となり、日付のため2019/12/31となる
+    # 日本時間 2020/1/1 9:10 ⇛ UTC 2020/1/1 0:10 にすると2019/12/31 15:00 +0:00となり、2019/12/31となる
+    assert expected == Model(date_utc=tokyo).date_utc
     assert (
         tz.localize(datetime.datetime(year=2020, month=1, day=1))
         == Model(date=tokyo).date

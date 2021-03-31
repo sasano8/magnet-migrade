@@ -7,11 +7,12 @@ def test_datetime_column_must_be_timezone_true():
     """sqlalchemyのdatetimeカラムはtimezone=Trueとなっていること"""
     datetimes = {}
     for table in Base.metadata.tables.values():
-        for column in table.columns.values():
+        # for column in table.columns.values():
+        for column in table._columns._colset:  # sqlalchemy1.4
             if isinstance(column.type, DateTime):
                 datetimes[table.name + "." + column.name] = column.type
 
-    ignores = {"dummy.date_naive"}
+    ignores = {"dummies.date_naive"}
 
     for name, dtype in datetimes.items():
         if name not in ignores:

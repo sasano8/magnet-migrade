@@ -8,7 +8,7 @@ import hypothesis.strategies as st
 import pytest
 from pydantic import ValidationError
 
-from pytrade import logic
+from pytrade import calculator as logic
 
 
 def test_calc_amount():

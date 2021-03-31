@@ -68,7 +68,7 @@ class Scheduler:
         if self.type == SchedulerType.DATETIMES:
             return self.iter_source()
         elif self.type == SchedulerType.SECOND:
-            return self.iter_secound()
+            return self.iter_second()
         else:
             raise NotImplementedError()
 

@@ -157,8 +157,17 @@ class Date(DateTimeAware):
 
     @classmethod
     def validate(cls, v):
-        v = super().validate(v)
-        return v
+        v = datetime_parse.parse_datetime(v)
+        v = cls.from_datetime(v)
+
+        if v < min_date_aware:
+            raise ValueError("Can not be used dates before 1901/12/15")
+        return v.replace(
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0,
+        )
 
 
 class DateUtc(Date):
@@ -171,8 +180,18 @@ class DateUtc(Date):
     def validate(cls, v):
         # replaceとastimezoneの実行順序は変えないこと。(テストしてないけどね！てへぺろ！)
         # サマータイムなどで影響が生じる可能性がある。
-        v = super().validate(v)
+        v = datetime_parse.parse_datetime(v)
+        v = cls.from_datetime(v)
+
+        if v < min_date_aware:
+            raise ValueError("Can not be used dates before 1901/12/15")
+
         v = v.astimezone(
             datetime.timezone.utc
         )  # 1. 2020/1/1 9:10 11 123456 +9:00 2. 2020/1/1 +9:00(2019/12/31 15) 3. 2019/12/31になる　なぜ
-        return v
+        return v.replace(
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0,
+        )

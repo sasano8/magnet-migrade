@@ -259,12 +259,12 @@ def test_fieldinfo():
         def request_query(skip: int = Field(0, ge=0)):
             return skip
 
-    # not support
-    with pytest.raises(AttributeError, match="object has no attribute"):
+    # support
+    @pand.get(url)
+    def request_query(skip: int = Field(0, ge=0)):
+        return skip
 
-        @pand.get(url)
-        def request_query(skip: int = Field(0, ge=0)):
-            return skip
+    assert p_client.get(url + "?skip=5").json() == 5
 
     url = "/test_body_1"
 

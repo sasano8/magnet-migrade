@@ -16,15 +16,6 @@ class HasName:
         return cls._name
 
 
-# class BrokerImpl(HasName):
-#     # @classmethod
-#     # def get_name(cls):
-#     #     return cls.__name
-
-#     def get_test_broker(self):
-#         return TestBroker(self)
-
-
 class BrokerImpl(HasName):
     def __init__(self, broker):
         self.client = broker
@@ -32,40 +23,9 @@ class BrokerImpl(HasName):
     def get_test_broker(self):
         return TestBroker(self)
 
-    # def create_pre_order(
-    #     self,
-    #     budget: Decimal,
-    #     product_code: str,
-    #     side: Literal[1, -1],
-    #     target_price: Decimal,
-    #     limit_rate: Decimal = None,
-    #     stop_rate: Decimal = None,
-    # ):
-    #     # product_code_localized = self.localize_product_code(product_code)
-    #     size = PreOrder.calc_amount(
-    #         budget=Decimal("100000"), price=target_price, min_unit=Decimal("0.01")
-    #     )
-    #     order = PreOrder(
-    #         product_code=product_code,
-    #         product_code_localized=product_code,
-    #         side=side,
-    #         target_price=target_price,
-    #         size=size,
-    #         limit_rate=limit_rate,
-    #         stop_rate=stop_rate,
-    #     )
-    #     # order = self.on_create_order(order)
-    #     return order
-
     def localize_order(self, order: PreOrder) -> PreOrder:
         """create_preorderの際に呼ばれるマーケット毎のローカライズ処理を実装する。主に、sideとproduct_codeをローカライズする。"""
         return order
-
-    # def get_product_code_mapping(self) -> Dict[str, str]:
-    #     return None
-
-    # def localize_product_code(self, product_code: str) -> str:
-    #     raise NotImplementedError()
 
     async def get_markets(self):
         raise NotImplementedError()
@@ -92,14 +52,6 @@ class BrokerImpl(HasName):
     async def order_cancel(self, status_data):
         """注文をキャンセルする。キャンセル済みの場合はNoneを返す。このメソッドはオーバーライド用のメソッドのため、クライアントとして利用する場合はcancelを利用してください。"""
         raise NotImplementedError()
-
-    # async def close(self, finalized_data: TradeResult):
-    #     """ブローカーにクローズ専用の処理は不要。単に注文を出せばよい"""
-    #     raise NotImplementedError()
-
-    # async def order_close(self, finalized_data):
-    #     """エントリーに対する反対売買を行う。"""
-    #     raise NotImplementedError()
 
     async def fetch_order_status(self, accepted_data):
         """apiから現在の注文情報を取得する"""
