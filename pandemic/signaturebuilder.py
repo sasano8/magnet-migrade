@@ -444,7 +444,6 @@ class SignatureBuilder:
         """辞書インスタンスを解析し、シグネチャを生成します。型推論は、pydanticによって行われます。"""
         from pydantic import BaseConfig, create_model
 
-        # TODO: libs.generatorを削除する
         class Config(BaseConfig):
             schema_extra = {"example": instance}
 

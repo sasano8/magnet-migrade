@@ -1,15 +1,11 @@
 import datetime
-from typing import Iterable, List, Literal, Tuple, TypeVar, Union
+from typing import Literal, TypeVar
 
-from sqlalchemy.orm import Query, Session
+from sqlalchemy.orm import Query
 
-from framework import DateTimeAware, Linq
-from libs.fastapi import GenericRepository
-from pp import Extender
+from framework import DateTimeAware
 
-from ... import schemas as common_schema
-from ...database import Base
-from . import models, schemas
+from . import models
 
 T = TypeVar("T")
 
@@ -75,11 +71,3 @@ def select_close_date_range(
         m.close_time <= until,
     ).order_by(sort)
     return query
-
-
-# class CryptoOhlcDaily(GenericRepository[models.CryptoOhlc]):
-#     pass
-
-
-# class CryptoTradeResult(GenericRepository[models.CryptoTradeResult]):
-#     pass

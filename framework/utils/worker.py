@@ -2,16 +2,27 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import signal
 from functools import partial, wraps
-from typing import Any, Callable, Coroutine, Iterable, Iterator, List, Tuple, TypeVar
+from typing import (
+    Any,
+    Callable,
+    Coroutine,
+    Iterable,
+    Iterator,
+    List,
+    Set,
+    Tuple,
+    TypeVar,
+)
 
 from framework.analyzers import FuncAnalyzer
+from pp.types import CancelToken
 
 T = TypeVar("T", bound=Callable)
 
 
 class Task:
-    # TODO: Coroutine functionにする
     def __init__(self, coroutine_callable: Callable[..., Coroutine]) -> None:
         if not FuncAnalyzer.is_coroutine_callable(coroutine_callable):
             raise TypeError(f"{coroutine_callable} is not coroutine_callable")
@@ -41,35 +52,17 @@ class Task:
             return self._task.get_name()
         return self.__name__
 
-    # @property
-    # def name(self):
-    #     return self.__name__
-
-    # @name.getter
-    # def name(self, value):
-    #     return self.__name__
-
-    # @name.setter
-    # def name(self, value):
-    #     self.__name__ = value
-
     def result(self):
         if self._task is None:
             raise asyncio.exceptions.InvalidStateError("Result is not set.")
         else:
             return self._task.result()
 
-    # def set_result(self):
-    #     return 1
-
     def exception(self):
         if self._task is None:
             raise asyncio.exceptions.InvalidStateError("Exception is not set.")
         else:
             return self._task.exception()
-
-    # def set_exception(self):
-    #     return 1
 
     def cancel(self):
         if self._task is None:
@@ -106,10 +99,6 @@ class Task:
     async def __call__(self, *args: Any, **kwargs: Any):
         return await self.schedule(*args, **kwargs)
 
-    # def set_task(self, future: asyncio.Future):
-    #     self._task = future
-    #     self._task.set_name(self._task.get_name())
-
 
 class SupervisorAsync(Iterable[Task]):
     """実行するコルーチン関数を管理する"""
@@ -121,13 +110,6 @@ class SupervisorAsync(Iterable[Task]):
 
     def __iter__(self) -> Iterator[Task]:
         return self.__root__.__iter__()
-
-    # @staticmethod
-    # def covert_coroutines_to_tasks(
-    #     coroutine_functions: Iterable[Callable[..., Coroutine]]
-    # ):
-    #     tasks = [Task(x) for x in coroutine_functions]
-    #     return tasks
 
     def to_executor(self, logger=None) -> LinqAsyncExecutor:
         # コルーチンファンクションからコルーチンを生成し、一度のみ実行可能なエクゼキュータを生成する
@@ -147,16 +129,16 @@ class SupervisorAsync(Iterable[Task]):
     def __await__(self):
         raise NotImplementedError()
 
-        async def func():
-            await asyncio.sleep(0)
 
-        return func().__await__()
-
-
-# なにをやる？
-# 具体的な処理と管理を記述する
 class LinqAsyncExecutor(SupervisorAsync):
-    """管理しているコルーチン関数からコルーチンを生成し、その実行管理を行う"""
+    """
+    管理しているコルーチン関数からコルーチンを生成し、その実行管理を行う。
+
+    実行可能な関数のインターフェースは次のとおり。
+
+    async def func(token: PCancelToken):
+        ...
+    """
 
     def __init__(
         self, coroutine_functions: Iterable[Callable[..., Coroutine]], logger
@@ -168,12 +150,11 @@ class LinqAsyncExecutor(SupervisorAsync):
             else:
                 raise TypeError(f"{cf} is not coroutine function.")
 
+        self.cancel_tokens = [CancelToken() for x in self.__root__]
+
         # self.on_each_complete = None
         self.current_tasks = None
         self.logger = logging.getLogger() if logger is None else logger
-
-    # def set_on_each_complete(self, callback):
-    #     self.on_each_complete = callback
 
     async def __call__(self):
         self.start()
@@ -188,11 +169,7 @@ class LinqAsyncExecutor(SupervisorAsync):
             print("exception!!!!")
             raise
 
-    # def __await__(self):
-    #     # 完了管理を行うこと
-    #     return self().__await__()
-
-    def run(self):
+    def run(self, handle_signals: Set[str] = {"SIGINT", "SIGTERM"}):
         """タスクを実行し、完了まで待機します。"""
         try:
             loop = asyncio.get_running_loop()
@@ -200,13 +177,25 @@ class LinqAsyncExecutor(SupervisorAsync):
         except RuntimeError as e:
             loop = None
 
-        if loop is None:
-            asyncio.run(self.run_async())
-        else:
+        if loop:
             # asyncioはネストしたイベントループを許可していない。それをハックするのも難しい
             raise RuntimeError(
                 "This event loop is already running. use `run_async` insted of"
             )
+
+        loop = asyncio.new_event_loop()
+        cancel_tokens = self.cancel_tokens
+
+        def handle_cancel():
+            print("cancel requested.")
+            for token in cancel_tokens:
+                token.is_canceled = True
+
+        for sig_name in handle_signals:
+            sig = getattr(signal, sig_name)
+            loop.add_signal_handler(sig, handle_cancel)
+
+        loop.run_until_complete(self.run_async())
 
     async def run_async(self):
         """タスクを実行し、完了まで待機します。"""
@@ -218,6 +207,7 @@ class LinqAsyncExecutor(SupervisorAsync):
         if self.current_tasks is not None:
             raise RuntimeError("cannot reuse already awaited coroutine")
 
+        loop = asyncio.get_event_loop()
         self.current_tasks = []
         monitor_tasks = self.current_tasks
 
@@ -229,8 +219,9 @@ class LinqAsyncExecutor(SupervisorAsync):
 
             asyncio.create_task(callback(task))
 
-        for task in self:
-            future = task.schedule()
+        for index, task in enumerate(self):
+            token = self.cancel_tokens[index]
+            future = task.schedule(token)
             monitor_tasks.append(future)
             future.add_done_callback(monitor_tasks.remove)
             future.add_done_callback(lazy_notify)
@@ -239,6 +230,10 @@ class LinqAsyncExecutor(SupervisorAsync):
         """タスクをストップし、全てのタスクが完了もしくはキャンセルされるまで待ちます。"""
         if self.current_tasks is None:
             raise Exception("The coroutine has not been executed yet")
+
+        # キャンセルトークンにキャンセルを通知する
+        for token in self.cancel_tokens:
+            token.is_canceled = True
 
         for task in self.current_tasks:
             if not task.done():
@@ -277,13 +272,6 @@ class LinqAsyncExecutor(SupervisorAsync):
 
             logger.warning(traceback.format_exc())
             logger.warning(f"[FAILED]{task}")
-
-    # 実装しない。それとも、loopを管理して、終了させるか。それはちょっとめんどい
-    # def __del__(self):
-    #     raise NotImplementedError()
-    # def to_executor(self):
-    #     # 継承すべきではない
-    #     raise NotImplementedError()
 
     def __enter__(self):
         raise NotImplementedError()

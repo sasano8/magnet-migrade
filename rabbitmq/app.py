@@ -5,7 +5,7 @@ import json
 import logging
 from dataclasses import dataclass, field
 from json import dumps
-from typing import Callable, TypeVar
+from typing import Awaitable, Callable, TypeVar, Union
 
 import pika
 from fastapi.encoders import jsonable_encoder
@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 
 from framework.analyzers import FuncAnalyzer
 from pp import FuncMimicry
+from pp.protocols import PCancelToken
 
 from .mock import MockBlockingConnection
 
@@ -62,17 +63,17 @@ class Rabbitmq:
         if conn.is_open:
             conn.close()
 
-    async def __call__(self, token=None):
+    async def __call__(self, token: PCancelToken):
         """キャンセルされるまでコネクションを自動で確立する"""
+        assert not token.is_canceled
+
         if self.running:
             raise Exception("実行は一度だけ")
         else:
             self.running = True
 
-        self.is_cancelled = False
-
         while True:
-            if self.is_cancelled:
+            if token.is_canceled:
                 break
 
             try:
@@ -164,17 +165,18 @@ class Consumer:
             exchange=exchange, routing_key=self.queue_name, body=json_str
         )
 
-    async def __call__(self, token=None):
+    async def __call__(self, token: PCancelToken):
+        assert not token.is_canceled
+
         while True:
             await asyncio.sleep(0)
-            if self.is_cancelled:
+            if token.is_canceled:
                 break
 
             params = dict(queue=self.queue_name, auto_ack=self.auto_ack)
 
             while True:
-                # await asyncio.sleep(0)
-                if self.is_cancelled:
+                if token.is_canceled:
                     break
 
                 try:

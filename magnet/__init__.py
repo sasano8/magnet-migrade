@@ -87,7 +87,7 @@ def setup_event_module():
 @setup
 def setup_crawler_module():
     """クローラーに関連するモジュールを読み込む。"""
-    from .crawlers import google
+    from .domain.crawlers.impl import google
 
 
 @setup

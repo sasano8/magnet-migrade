@@ -1,7 +1,3 @@
-# TODO: dockerfileを作る
-- initプロセスがないので、supervisorをnodeamonで立ち上げる。
-- /xxx/supervisorでプロセスを起動させるが、デバッグはどう分岐させるか
-
 # TODO: supervisorの設定を考える
 - redirect_stderr=trueにすると、vscodeのデバッグコンソール上に実行結果が表示される
 - redirect_stderr=trueにすると、ログ出力されない

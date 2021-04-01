@@ -9,29 +9,25 @@ from .config import RabbitmqConfig
 logger = logging.getLogger(__name__)
 env = RabbitmqConfig()
 
-# ===================================================
-# rabbitmq workers
-# ===================================================
-# TODO: ラウンドロビンに対応させたい
+
 rabbitmq_conn = Rabbitmq(url=env.RABBITMQ_HOST)  # 接続の確立と自動回復を試みる
-queue_default = rabbitmq_conn.consumer(
-    queue_name="default"
-)  # 接続上にチャンネルを作成し、キューからメッセージ受信
+queue_default = rabbitmq_conn.consumer(queue_name="default")
 queue_crawler = rabbitmq_conn.consumer(queue_name="crawler", auto_ack=True)
 
+queueing = SupervisorAsync([rabbitmq_conn, queue_default, queue_crawler]).to_executor(
+    logger=logger
+)
 
-# ===================================================
-# brokers
-# ===================================================
-# from .domain.order import Broker
 
-# order_watcher = Broker()
+async def start_consume():
+    """メッセージキューの購読を開始します。"""
+    queueing.start()
 
-# workers = SupervisorAsync(
-#     [rabbitmq_conn, queue_default, queue_crawler, broker]
-# ).to_executor(logger=logger)
 
-# workers = SupervisorAsync([order_watcher]).to_executor(logger=logger)
+async def stop_consume():
+    """メッセージキューの購読を終了します。"""
+    await queueing.stop()
+
 
 from .database import get_db
 

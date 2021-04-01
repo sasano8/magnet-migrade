@@ -5,8 +5,9 @@ from typing import Any, List, Optional
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from ..commons import BaseModel
-from ..crawler import crawlers
+from ....commons import BaseModel
+
+# from ...crawlers.crud import crawlers
 
 logger = logging.getLogger("google")
 
@@ -70,7 +71,7 @@ class CommonSchema(TaskCreate):
         self.summary = self.detail.summary
 
 
-@crawlers.task
+# @crawlers.task
 async def scrape_google(driver, /):
     # TODO: optionを追加する
     state = CommonSchema(crawler_name="google", keyword="山田太郎")  # 引数で受け入れること

@@ -52,23 +52,13 @@ alias_min = {
     "global_": "global",
 }
 
-# Model = TypeVar("Model", bound="BaseModel")
 Model = TypeVar("Model", bound=PydanticModel)
-# from pydantic import BaseModel as PydanticModel
-# from pydantic import BaseSettings as PydanticSettings
-# Model = Type[Union[PydanticModel, PydanticModel]]
 
 
 class BaseConfig:
     fields = alias_min
     allow_population_by_field_name = True  # インスタンス生成時のパラメータを、# フィールド名・エイリアスの両対応とする
     validate_assignment = True  # 属性更新時の検証を有効にする
-
-
-# noinspection PyTypeChecker
-# class BaseModel(PydanticModel):
-#     class Config:
-#         validate_assignment = True  # 属性更新時の検証を有効にする
 
 
 class MixinModel:
@@ -94,13 +84,6 @@ class MixinModel:
             name = name
 
         return type(prefix + name + suffix, (cls,), {})
-
-    # obj.prefab(fields={
-    #   "name"=..., # required
-    #   "name"=None, # optional
-    #   "name"=1, # default
-    #   "name"=del, # exclude
-    # })
 
     @classmethod
     def prefab(
@@ -173,22 +156,6 @@ class MixinModel:
             new_type.__fields__[key].required = False
 
         return new_type
-
-    # @classmethod
-    # def as_func(cls):
-    #     """
-    #     モデル属性を関数の引数にマップした関数を生成します。
-    #     これは、fastapiがpydanticをクエリとして理解しないため、関数に変換しクエリとして解釈されるように利便性を高めるために定義しました。
-    #     モデルは以下のように解釈されます。
-
-    #     class A(BaseModel):
-    #       name: str
-    #       age: int = 20
-
-    #     def create_A(name: str, age: int = 20):
-    #         return A(name=name, age=age)
-    #     """
-    #     return generate_funnel(cls)
 
 
 class BaseModel(MixinModel, PydanticModel):
