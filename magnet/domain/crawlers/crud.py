@@ -1,5 +1,3 @@
-from libs import decorators
-from magnet.env import Env
+from libs.decorators import Tag
 
-# TODO: コンポーネント内にcrudを収める
-crawlers = Env.crawlers
+crawlers: Tag = Tag(tag="crawler", key_selector=lambda func: func.__name__)

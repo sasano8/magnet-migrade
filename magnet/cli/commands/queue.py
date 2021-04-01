@@ -4,7 +4,7 @@ app = typer.Typer()
 
 
 @app.command(help="メッセージの購読を開始します。")
-def consume():
+def consume(reload: bool = False):
     queueing = get_queuing_instance()
     queueing.run()
 

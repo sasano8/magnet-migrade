@@ -2,12 +2,13 @@ import logging
 import time
 from typing import Any, List, Optional
 
+from fastapi import Depends
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from ....commons import BaseModel
-
-# from ...crawlers.crud import crawlers
+from ..crud import crawlers
+from ..driverpool import get_driver
 
 logger = logging.getLogger("google")
 
@@ -71,10 +72,10 @@ class CommonSchema(TaskCreate):
         self.summary = self.detail.summary
 
 
-# @crawlers.task
-async def scrape_google(driver, /):
+@crawlers.append
+async def scrape_google(driver: str = Depends(get_driver), *, keyword: str):
     # TODO: optionを追加する
-    state = CommonSchema(crawler_name="google", keyword="山田太郎")  # 引数で受け入れること
+    state = CommonSchema(crawler_name="google", keyword=keyword)  # 引数で受け入れること
     # state = input
 
     # condition = '({0})'.format(' OR '.join(state.option_keywords))

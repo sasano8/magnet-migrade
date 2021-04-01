@@ -3,17 +3,18 @@ get_driver_managerにより、シングルトンのセレニウムインスタ�
 クローラの並列起動をしたい場合は、ワーカーを多重起動する。（未検証）
 """
 
+import logging
 import os
 
 from selenium import webdriver
 from selenium.webdriver import DesiredCapabilities
 
-from magnet import logger
+logger = logging.getLogger(__name__)
 
 
 class SeleniumManager:
     def __init__(self):
-        self.driver = None
+        self.driver: webdriver.Remote = None  # type: ignore
         self.init()
 
     def init(self):
@@ -22,8 +23,10 @@ class SeleniumManager:
         # プロセス終了時にブラウザを終了させる
         import signal
 
-        signal.signal(signal.SIGINT, self.handle_exit)
-        signal.signal(signal.SIGTERM, self.handle_exit)
+        # 非同期環境下ではシグナルを捕捉できない
+        # signal only works in main thread
+        # signal.signal(signal.SIGINT, self.handle_exit)
+        # signal.signal(signal.SIGTERM, self.handle_exit)
 
     def handle_exit(self, sig, frame):
         self.__del__()
@@ -79,6 +82,10 @@ class SeleniumManager:
         driver.get("about:blank")
         logger.info("browser was cleaned up.")
 
+    def get_driver(self):
+        assert self.driver
+        return self.driver
+
     def quit(self):
         self.__del__()
 
@@ -93,7 +100,7 @@ class SeleniumManager:
 __DRIVER = None
 
 
-def get_driver_manager():
+def get_driver_manager() -> SeleniumManager:
     global __DRIVER
 
     if __DRIVER:
@@ -101,3 +108,12 @@ def get_driver_manager():
 
     __DRIVER = SeleniumManager()
     return __DRIVER
+
+
+def get_driver():
+    driver_manager = get_driver_manager()
+    driver = driver_manager.get_driver()
+    try:
+        yield driver
+    finally:
+        driver_manager.cleanup_driver()

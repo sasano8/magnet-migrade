@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import signal
-from functools import partial, wraps
+from functools import partial
 from typing import (
     Any,
     Callable,

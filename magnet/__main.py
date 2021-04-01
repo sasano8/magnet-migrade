@@ -51,6 +51,7 @@ async def root():
 
 @setup
 def add_routers():
+    import magnet.domain.crawlers.views
     import magnet.domain.develop.views
     import magnet.domain.scaffold.views
     import magnet.domain.system.views
@@ -69,8 +70,8 @@ def add_routers():
     # app.include_router(magnet.executor.views.router, prefix="/executor")
     # app.include_router(magnet.ingester.views.router, prefix="/ingester")
     # app.include_router(magnet.trader.views.router, prefix="/trader")
+    app.include_router(magnet.domain.crawlers.views.router, prefix="/crawlers")
     app.include_router(magnet.domain.scaffold.views.router, prefix="/scaffold")
-
     app.include_router(magnet.domain.develop.views.router, prefix="/develop")
     app.include_router(magnet.domain.system.views.router, prefix="/system")
 
