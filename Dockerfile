@@ -11,7 +11,7 @@ EXPOSE 8080
 EXPOSE 5672
 EXPOSE 22
 
-RUN sudo apt-get update && sudo apt install -y openssh-server && sudo apt install -y vim
+RUN sudo apt-get update && sudo apt install -y openssh-server && sudo apt install -y vim git
 RUN sudo mkdir /run/sshd
 
 RUN echo "PermitRootLogin yes" >> /etc/ssh/sshd_config
@@ -25,16 +25,18 @@ RUN chown seluser:seluser /app
 USER seluser
 RUN poetry config virtualenvs.create false && poetry config virtualenvs.in-project false
 
-COPY ./pyproject.toml /app/pyproject.toml
-COPY ./poetry.lock* /app/
-
+# COPY ./pyproject.toml /app/pyproject.toml
+# 存在する場合にコピーを行う場合、ワイルドカードが使用できる。ただし、存在するファイルを最低１つは指定しなければいけない
+COPY pyproject.toml poetry.lock* /app/
+COPY vendor /app/vendor
+RUN sudo chgrp seluser /app/vendor
 
 RUN sudo pip3 install --upgrade keyrings.alt
 
 # sudoをつけないと、poetryがグローバルインストールされているため権限エラーが発生する
 RUN sudo apt install -y graphviz libgraphviz-dev  # eralchemyのer出力にグラフライブラリが必要
 # RUN sudo poetry update
-RUN poetry install
+RUN sudo poetry install
 
 
 

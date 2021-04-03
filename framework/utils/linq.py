@@ -28,8 +28,6 @@ import pandas as pd
 from pydantic import BaseModel, parse_obj_as
 from pydantic.tools import NameFactory
 
-from .worker import SupervisorAsync, Task
-
 
 class Undefined:
     pass
@@ -905,10 +903,6 @@ class LinqAsyncio(Linq[T]):
             raise RuntimeError(
                 "Cannot be called from a running event loop. Use `gather` instead of `run`."
             )
-
-    def supervise(self: Iterable[Callable[..., Coroutine]]) -> SupervisorAsync[Task]:
-        # tasks = [Task(x) for x in self]
-        return SupervisorAsync(self)
 
 
 # TODO: どっかまともなところへ移す

@@ -9,7 +9,11 @@ class PExtender(Protocol[T]):
 
 
 class PCancelToken(Protocol):
-    is_canceled: bool
+    is_cancelled: bool
+
+    @property
+    def is_cancelled(self):
+        raise NotImplementedError()
 
 
 class PFuncWrapper(Protocol[F]):

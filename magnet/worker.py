@@ -1,7 +1,8 @@
 import asyncio
 import logging
 
-from framework.workers import SupervisorAsync
+import asy
+
 from rabbitmq import Rabbitmq
 
 from .config import RabbitmqConfig
@@ -14,9 +15,7 @@ rabbitmq_conn = Rabbitmq(url=env.RABBITMQ_HOST)  # 接続の確立と自動回�
 queue_default = rabbitmq_conn.consumer(queue_name="default")
 queue_crawler = rabbitmq_conn.consumer(queue_name="crawler", auto_ack=True)
 
-queueing = SupervisorAsync([rabbitmq_conn, queue_default, queue_crawler]).to_executor(
-    logger=logger
-)
+queueing = asy.supervise(rabbitmq_conn, queue_default, queue_crawler)
 
 
 async def start_consume():
@@ -31,7 +30,7 @@ async def stop_consume():
 
 from .database import get_db
 
-workers = SupervisorAsync().to_executor(logger=logger)
+workers = asy.supervise()
 
 
 @queue_default.task

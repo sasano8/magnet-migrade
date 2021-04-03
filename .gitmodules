@@ -1,0 +1,4 @@
+[submodule "vendor/asy"]
+	path = vendor/asy
+	url = https://github.com/sasano8/asy.git
+	branch = dev

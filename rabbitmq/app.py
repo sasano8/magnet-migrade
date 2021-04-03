@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from json import dumps
 from typing import Awaitable, Callable, TypeVar, Union
 
+import asy
 import pika
 from fastapi.encoders import jsonable_encoder
 from pika import exceptions
@@ -63,9 +64,9 @@ class Rabbitmq:
         if conn.is_open:
             conn.close()
 
-    async def __call__(self, token: PCancelToken):
+    async def __call__(self, token: asy.PCancelToken):
         """キャンセルされるまでコネクションを自動で確立する"""
-        assert not token.is_canceled
+        assert not token.is_cancelled
 
         if self.running:
             raise Exception("実行は一度だけ")
@@ -73,7 +74,7 @@ class Rabbitmq:
             self.running = True
 
         while True:
-            if token.is_canceled:
+            if token.is_cancelled:
                 break
 
             try:
@@ -165,18 +166,18 @@ class Consumer:
             exchange=exchange, routing_key=self.queue_name, body=json_str
         )
 
-    async def __call__(self, token: PCancelToken):
-        assert not token.is_canceled
+    async def __call__(self, token: asy.PCancelToken):
+        assert not token.is_cancelled
 
         while True:
             await asyncio.sleep(0)
-            if token.is_canceled:
+            if token.is_cancelled:
                 break
 
             params = dict(queue=self.queue_name, auto_ack=self.auto_ack)
 
             while True:
-                if token.is_canceled:
+                if token.is_cancelled:
                     break
 
                 try:
