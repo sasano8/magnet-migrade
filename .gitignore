@@ -8,3 +8,4 @@ __pycache__
 core
 doc/er.png
 doc/tables.md
+vendor/*
