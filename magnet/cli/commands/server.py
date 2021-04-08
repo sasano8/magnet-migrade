@@ -7,7 +7,11 @@ LOGPATH = "/var/log/supervisor/fastapi-stdout.log"
 
 
 @app.command()
-def start(debug_vs_code: bool = False) -> None:
+def start(
+    host: str = "0.0.0.0",
+    port: int = 8080,
+    reload: bool = False,
+) -> None:
     """アプリケーションサーバを起動します"""
     import uvicorn
 
@@ -16,22 +20,7 @@ def start(debug_vs_code: bool = False) -> None:
     if not isinstance(ENTRYPOINT_ASGI, str):
         raise Exception("直接アプリケーションの参照を渡さないでください。プログラムが更新されても、リロードが反映されなくなります。")
 
-    if not debug_vs_code:
-        uvicorn.run(ENTRYPOINT_ASGI, host="0.0.0.0", port=8080)
-    else:
-        import debugpy
-
-        # デバッガーがアタッチされるまで待機してからアプリケーションを起動する
-        debugpy.listen(("0.0.0.0", 5678))
-        debugpy.wait_for_client()
-
-        uvicorn.run(
-            ENTRYPOINT_ASGI,
-            host="0.0.0.0",
-            port=8080,
-            reload=True,
-            # reload_dirs=["magnet", "rabbitmq"],
-        )
+    uvicorn.run(ENTRYPOINT_ASGI, host=host, port=port, reload=reload)
 
 
 @app.command()

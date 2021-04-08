@@ -3,20 +3,16 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Python: アタッチ",
+      "name": "Python: debug app",
       "type": "python",
-      "request": "attach",
-      "connect": {
-        "host": "localhost",
-        "port": 5678
-      },
-      "pathMappings": [
-        {
-          "localRoot": "${workspaceFolder}",
-          "remoteRoot": "."
-        }
+      "request": "launch",
+      "module": "magnet",
+      "args": [
+        "server",
+        "start",
+        "--reload"
       ],
-      "justMyCode": false, // 外部ライブラリ等もデバッグする
+      "justMyCode": false // 外部ライブラリ等もデバッグする
     }
   ]
 }
