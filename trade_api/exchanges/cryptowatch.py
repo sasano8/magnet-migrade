@@ -20,6 +20,17 @@ class Pairs(BaseModel):
     route: str
 
 
+class Market(BaseModel):
+    id: int
+    exchange: str
+    pair: str
+    active: bool
+
+    @property
+    def route(self):
+        return f"https://api.cryptowat.ch/markets/{self.exchange}/{self.pair}"
+
+
 class Ohlc(BaseModel):
     close_time: datetime.datetime
     open_price: float
@@ -32,6 +43,21 @@ class Ohlc(BaseModel):
 
 class CryptowatchAPI:
     last_allowance: Allowance = Allowance(cost=0, remaining=1000000, upgrade="")
+
+    async def get_markets(self):
+        url = "https://api.cryptowat.ch/markets"
+
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url)
+
+            try:
+                response.raise_for_status()
+            except httpx._exceptions.HTTPError as err:
+                raise err
+
+            dic = json.loads(response.text)
+            result = parse_obj_as(List[Market], dic["result"])
+            return result
 
     async def get_pairs(self) -> List[Pairs]:
         url = "https://api.cryptowat.ch/pairs"

@@ -2,3 +2,6 @@
 	path = vendor/asy
 	url = https://github.com/sasano8/asy.git
 	branch = dev
+[submodule "vendor/asy_rabbitmq"]
+	path = vendor/asy_rabbitmq
+	url = https://github.com/sasano8/asy_rabbitmq

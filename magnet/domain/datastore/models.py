@@ -15,6 +15,14 @@ class CryptoPair(Base):
     symbol = sa.Column(sa.String(255), nullable=False, unique=True)
 
 
+class CryptoMarket(Base):
+    id = sa.Column(sa.Integer, primary_key=True)
+    provider = sa.Column(sa.String(255), nullable=False)
+    exchange = sa.Column(sa.String(255), nullable=False)
+    pair = sa.Column(sa.String(255), nullable=False)
+    active = sa.Column(sa.BOOLEAN, nullable=False)
+
+
 class CryptoBase:
     id = sa.Column(sa.Integer, primary_key=True)
     provider = sa.Column(sa.String(255), nullable=False, default="")

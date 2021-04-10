@@ -19,18 +19,24 @@ class LineBotApiDummy:
 
 LINE_CHANNEL_ACCESS_TOKEN = LineChannelConfig().LINE_CHANNEL_ACCESS_TOKEN
 
-line_bot_api: LineBotApi
+# line_bot_api: LineBotApi
 
-if LINE_CHANNEL_ACCESS_TOKEN:
-    line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
-else:
-    logger.warning("Not set LINE_CHANNEL_ACCESS_TOKEN. Notification's not work.")
-    line_bot_api = LineBotApiDummy(LINE_CHANNEL_ACCESS_TOKEN)
+# if LINE_CHANNEL_ACCESS_TOKEN:
+#     line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
+# else:
+#     logger.warning("Not set LINE_CHANNEL_ACCESS_TOKEN. Notification's not work.")
+#     line_bot_api = LineBotApiDummy(LINE_CHANNEL_ACCESS_TOKEN)
 
 
 def broadcast(*messages):
+    if not LINE_CHANNEL_ACCESS_TOKEN:
+        logger.warning("Not set LINE_CHANNEL_ACCESS_TOKEN. Notification's not work.")
+        return
+
+    line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
+
     arr = [TextSendMessage(text=msg) for msg in messages]
     try:
         line_bot_api.broadcast(messages=arr)
     except LineBotApiError as e:
-        logger.critical(e, exc_info=True)
+        logger.critical(e)

@@ -20,7 +20,8 @@ def start(
     if not isinstance(ENTRYPOINT_ASGI, str):
         raise Exception("直接アプリケーションの参照を渡さないでください。プログラムが更新されても、リロードが反映されなくなります。")
 
-    uvicorn.run(ENTRYPOINT_ASGI, host=host, port=port, reload=reload)
+    # lifespan=on: startup shutdownイベント時に例外を捕捉する
+    uvicorn.run(ENTRYPOINT_ASGI, host=host, port=port, reload=reload, lifespan="on")
 
 
 @app.command()

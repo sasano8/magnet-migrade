@@ -16,7 +16,6 @@ from pydantic import BaseModel, Field
 
 from framework.analyzers import FuncAnalyzer
 from pp import FuncMimicry
-from pp.protocols import PCancelToken
 
 from .mock import MockBlockingConnection
 
@@ -29,8 +28,6 @@ class Rabbitmq:
 
     url: str
     is_mock: bool = False  # サーバにRabbitMQのモックを使用する。テスト時などに使用。挙動は完全にエミュレートされていない。
-
-    running: bool = field(default=False, init=False)
     is_cancelled: bool = field(default=False, init=False)
     conn: pika.BlockingConnection = field(default=None, init=False)
 
@@ -66,20 +63,9 @@ class Rabbitmq:
 
     async def __call__(self, token: asy.PCancelToken):
         """キャンセルされるまでコネクションを自動で確立する"""
-        assert not token.is_cancelled
-
-        if self.running:
-            raise Exception("実行は一度だけ")
-        else:
-            self.running = True
-
-        while True:
-            if token.is_cancelled:
-                break
-
+        while not token.is_cancelled:
             try:
                 self.establish_conn()
-
                 await asyncio.sleep(10)
             except exceptions.AMQPError as e:
                 import traceback
@@ -169,38 +155,33 @@ class Consumer:
     async def __call__(self, token: asy.PCancelToken):
         assert not token.is_cancelled
 
-        while True:
-            await asyncio.sleep(0)
-            if token.is_cancelled:
-                break
+        # while not token.is_cancelled:
+        #     await asyncio.sleep(0)
 
-            params = dict(queue=self.queue_name, auto_ack=self.auto_ack)
+        params = dict(queue=self.queue_name, auto_ack=self.auto_ack)
 
-            while True:
-                if token.is_cancelled:
-                    break
+        while not token.is_cancelled:
+            try:
+                await asyncio.sleep(0)
+                channel = await self.get_channel()
+                msg = channel.basic_get(**params)
 
-                try:
-                    await asyncio.sleep(0)
-                    channel = await self.get_channel()
-                    msg = channel.basic_get(**params)
-
-                    # キューが空の場合はNone
-                    if not any(msg):
-                        await asyncio.sleep(1)
-                        continue
-
-                    method, properties, body = msg
-                    body = json.loads(body)
-                    body = CallInfo(**body)
-
-                    result = await self.execute(channel, method, properties, body)
-                except Exception as e:
-                    import traceback
-
-                    print(traceback.format_exc())
+                # キューが空の場合はNone
+                if not any(msg):
                     await asyncio.sleep(1)
                     continue
+
+                method, properties, body = msg
+                body = json.loads(body)
+                body = CallInfo(**body)
+
+                result = await self.execute(channel, method, properties, body)
+            except Exception as e:
+                import traceback
+
+                print(traceback.format_exc())
+                await asyncio.sleep(1)
+                continue
 
     async def execute(
         self,

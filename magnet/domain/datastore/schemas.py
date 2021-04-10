@@ -19,8 +19,8 @@ class Pairs(BaseModel):
 class CryptoBase(BaseModel):
     id: Optional[int]
     provider: Literal["cryptowatch"]
-    market: Literal["bitflyer"]
-    product: Literal["btcjpy", "btcfxjpy"]
+    market: Literal["bitflyer", "binance"]
+    product: Literal["btcjpy", "btcfxjpy", "btcusdt"]
     periods: int
 
 

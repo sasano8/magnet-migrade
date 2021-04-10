@@ -18,7 +18,8 @@
   "python.testing.pytestArgs": [
     "-v",
     "-s",
-    "--no-cov"
+    "--no-cov",
+    "tests"
   ],
   "python.testing.unittestEnabled": false,
   "python.testing.nosetestsEnabled": false,
@@ -28,4 +29,5 @@
   "todo-tree.tree.showBadges": true,
   "todo-tree.tree.showCountsInTree": true,
   "markdown-preview-enhanced.automaticallyShowPreviewOfMarkdownBeingEdited": true,
+  "jupyter.jupyterServerType": "local",
 }

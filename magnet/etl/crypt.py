@@ -8,6 +8,7 @@ from framework import DateTimeAware, Linq
 
 from ..commons import BaseModel, BulkResult
 from ..domain.datastore import models, schemas
+from ..utils.notify import broadcast
 from .executor import daily
 
 
@@ -42,6 +43,36 @@ async def daily_update_crypto_pair(db: Session) -> BulkResult:
     return BulkResult(deleted=deleted, inserted=succeeded, errors=exceptions)
 
 
+@daily
+async def daily_update_crypto_markets(db: Session) -> BulkResult:
+    """
+    取引所と取扱ペアのデータを更新する
+    """
+    from trade_api.exchanges.cryptowatch import CryptowatchAPI
+
+    m = models.CryptoMarket
+    provider = "cryptowatch"
+
+    # extract
+    data = await CryptowatchAPI().get_markets()
+
+    # transform
+    query = (
+        Linq(data)
+        # .map(lambda x: schemas.Pairs(provider=provider, symbol=x.symbol).dict())  # type: ignore
+        .map(lambda x: m(provider=provider, **x.dict()))
+    )
+
+    # load
+    deleted = db.query(m).filter(m.provider == provider).delete()
+
+    count, succeeded, exceptions = query.dispatch(db.add)
+    if exceptions:
+        raise Exception(exceptions)
+
+    return BulkResult(deleted=deleted, inserted=succeeded, errors=exceptions)
+
+
 class JobBase(BaseModel):
     @property
     def description(self):
@@ -52,8 +83,8 @@ class CryptoWatchOhlcExtractor(JobBase):
     """指定し市場通過ピリオドをcryptowatchから取得し、データストアに保存する。"""
 
     provider: Literal["cryptowatch"]
-    market: Literal["bitflyer"]
-    product: Literal["btcjpy", "btcfxjpy"]
+    market: Literal["bitflyer", "binance"]
+    product: Literal["btcjpy", "btcfxjpy", "btcusdt"]
     periods: int
     after: DateTimeAware = DateTimeAware(2010, 1, 1)
 
@@ -170,4 +201,36 @@ daily(
     )
 )
 
+# daily(
+#     CryptoWatchOhlcExtractor(
+#         provider="cryptowatch",
+#         market="bitflyer",
+#         product="btcfxjpy",
+#         periods=60 * 60 * 24,
+#         after=DateTimeAware(2010, 1, 1),
+#     )
+# )
+
+daily(
+    CryptoWatchOhlcExtractor(
+        provider="cryptowatch",
+        market="binance",
+        product="btcusdt",
+        periods=60 * 60 * 24,
+        after=DateTimeAware(2010, 1, 1),
+    )
+)
+
 daily(SystemTradeBot())
+
+
+@daily
+async def notify_in_your_heart(db: Session):
+    broadcast(
+        """
+    必勝法心得
+    １．低レバ
+    ２．順張り（上昇中に買う）
+    ３．欲張らない
+    """
+    )

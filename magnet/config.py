@@ -111,15 +111,21 @@ class UserAccessTokenConfig(EnvBase):
 class APICredentialZaifCreate(EnvBase):
     API_ZAIF_API_KEY: str
     API_ZAIF_API_SECRET: str
-    # class Config:
-    #     env_prefix = "API_ZAIF_"
 
 
 class APICredentialBitflyerCreate(EnvBase):
     API_BITFLYER_API_KEY: str
     API_BITFLYER_API_SECRET: str
-    # class Config:
-    #     env_prefix = "API_BITFLYER_"
+
+
+class APICredentialBinanceCreate(EnvBase):
+    API_BINANCE_API_KEY: str
+    API_BINANCE_API_SECRET: str
+
+
+class APICredentialBybitCreate(EnvBase):
+    API_BYBIT_API_KEY: str
+    API_BYBIT_API_SECRET: str
 
 
 class LineChannelConfigCreate(EnvBase):
@@ -135,6 +141,8 @@ config_create_mixins = reversed(
         UserAccessTokenConfigCreate,
         APICredentialZaifCreate,
         APICredentialBitflyerCreate,
+        APICredentialBinanceCreate,
+        APICredentialBybitCreate,
     ]
 )
 
@@ -150,11 +158,15 @@ LogConfig = LogConfigCreate.prefab(name="LogConfig")
 UserAccessTokenConfig = UserAccessTokenConfig
 APICredentialZaif = APICredentialZaifCreate.prefab(name="APICredentialZaif")
 APICredentialBitflyer = APICredentialBitflyerCreate.prefab(name="APICredentialBitflyer")
+APICredentialBinance = APICredentialBinanceCreate.prefab(name="APICredentialBinance")
+APICredentialBybit = APICredentialBybitCreate.prefab(name="APICredentialBybit")
 LineChannelConfig = LineChannelConfigCreate.prefab(name="LineChannelConfig")
 
 
 class AllConfig(
     LineChannelConfig,
+    APICredentialBybit,
+    APICredentialBinance,
     APICredentialBitflyer,
     APICredentialZaif,
     UserAccessTokenConfig,

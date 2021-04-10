@@ -89,12 +89,7 @@ from .worker import func
 @app.on_event("startup")
 async def startup_worker():
     """ワーカーを起動します"""
-
-    # from .domain.order import Broker
-
-    # client = Broker("bitflyer")
-    # await client()
-    workers.start()
+    await workers.start()
 
 
 @app.on_event("shutdown")
@@ -102,13 +97,3 @@ async def shutdown_worker():
     """ワーカーを終了します"""
     await workers.stop()
     # await supervisor.stop()
-
-
-# from . import notify
-
-# notify.broadcast("へいへいへい！")
-
-
-# 取引アルゴリズム　やること
-
-# TESLAはビットコインと連動する

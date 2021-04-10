@@ -838,11 +838,11 @@ class Linq(Iterable[T]):
     def dummy() -> Linq:
         return LinqDummy()
 
-    @staticmethod
-    def asyncio(
-        self: Iterable[Callable[..., Coroutine]]
-    ) -> LinqAsyncio[Callable[..., Coroutine]]:
-        return LinqAsyncio(self)
+    # @staticmethod
+    # def asyncio(
+    #     self: Iterable[Callable[..., Coroutine]]
+    # ) -> LinqAsyncio[Callable[..., Coroutine]]:
+    #     return LinqAsyncio(self)
 
 
 class LinqRoot(Linq):
@@ -867,42 +867,42 @@ class LinqDummy(Linq):
         raise Exception("ダミーオブジェクトはイテレートできません。")
 
 
-# TODO: CoroutineをCoroutineFunctionに直す
-class LinqAsyncio(Linq[T]):
-    def __init__(
-        self, __root__: Iterable[Callable[..., Coroutine]], func: Callable = iter
-    ):
-        self.__root__ = convert_to_queryable(__root__)
-        self.generator_function = func
+# # TODO: CoroutineをCoroutineFunctionに直す
+# class LinqAsyncio(Linq[T]):
+#     def __init__(
+#         self, __root__: Iterable[Callable[..., Coroutine]], func: Callable = iter
+#     ):
+#         self.__root__ = convert_to_queryable(__root__)
+#         self.generator_function = func
 
-        if self.__root__ is None:
-            raise ValueError(f"Not queryable: {type(__root__)} {__root__}")
+#         if self.__root__ is None:
+#             raise ValueError(f"Not queryable: {type(__root__)} {__root__}")
 
-    def __aiter__(self):
-        return self._serise().__aiter__()
+#     def __aiter__(self):
+#         return self._serise().__aiter__()
 
-    async def gather(self: Iterable[Callable[..., Coroutine]]):
-        for co in self:
-            if inspect.iscoroutinefunction(co):
-                ...
-            else:
-                ...
-        return await asyncio.gather(*map(lambda x: x(), self))
+#     async def gather(self: Iterable[Callable[..., Coroutine]]):
+#         for co in self:
+#             if inspect.iscoroutinefunction(co):
+#                 ...
+#             else:
+#                 ...
+#         return await asyncio.gather(*map(lambda x: x(), self))
 
-    async def _serise(self: Iterable[Callable[..., Coroutine]]):
-        for coroutine_function in self:
-            co = coroutine_function()
-            result = await co
-            yield result
+#     async def _serise(self: Iterable[Callable[..., Coroutine]]):
+#         for coroutine_function in self:
+#             co = coroutine_function()
+#             result = await co
+#             yield result
 
-    def run(self: Iterable[Callable[..., Coroutine]]):
-        coroutine = LinqAsyncio.gather(self)
-        try:
-            return asyncio.run(coroutine)
-        except RuntimeError:
-            raise RuntimeError(
-                "Cannot be called from a running event loop. Use `gather` instead of `run`."
-            )
+#     def run(self: Iterable[Callable[..., Coroutine]]):
+#         coroutine = LinqAsyncio.gather(self)
+#         try:
+#             return asyncio.run(coroutine)
+#         except RuntimeError:
+#             raise RuntimeError(
+#                 "Cannot be called from a running event loop. Use `gather` instead of `run`."
+#             )
 
 
 # TODO: どっかまともなところへ移す

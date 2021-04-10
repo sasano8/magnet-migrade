@@ -2,6 +2,7 @@ import inspect
 from typing import Any, Callable, Coroutine, List, TypeVar
 
 from sqlalchemy.orm import Session
+from typer.models import Context
 
 from ..commons import BulkResult, EtlJobResult
 from ..database import get_db
@@ -33,8 +34,13 @@ async def run_daily():
                 name = func.__class__.__name__
                 description = func.description  # type: ignore
 
+            if hasattr(result, "dict"):
+                result_dict = result.dict()
+            else:
+                if result is None:
+                    result_dict = {}
             results.append(
-                EtlJobResult(name=name, description=description, **result.dict())
+                EtlJobResult(name=name, description=description, **result_dict)
             )
 
     for db in get_db():

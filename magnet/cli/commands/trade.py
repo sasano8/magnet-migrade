@@ -1,4 +1,6 @@
 import asyncio
+import logging
+import traceback
 from typing import Callable, List, TypeVar
 
 import typer
@@ -9,6 +11,7 @@ F = TypeVar("F", bound=Callable)
 
 app = typer.Typer()
 
+logger = logging.getLogger(__name__)
 
 
 
@@ -31,7 +34,7 @@ def start(immediate: bool =False):
         try:
             await run_daily()
         except Exception as e:
-            print(e)
+            logger.critical(traceback.format_exc())
 
     async def main():
         while True:
