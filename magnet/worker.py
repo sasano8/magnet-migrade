@@ -2,8 +2,7 @@ import asyncio
 import logging
 
 import asy
-
-from rabbitmq import Rabbitmq
+from asy_rabbitmq import RabbitmqParam
 
 from .config import RabbitmqConfig
 
@@ -11,21 +10,12 @@ logger = logging.getLogger(__name__)
 env = RabbitmqConfig()
 
 
-rabbitmq_conn = Rabbitmq(url=env.RABBITMQ_HOST)  # 接続の確立と自動回復を試みる
-queue_default = rabbitmq_conn.consumer(queue_name="default")
-queue_crawler = rabbitmq_conn.consumer(queue_name="crawler", auto_ack=True)
-
-queueing = asy.supervise(rabbitmq_conn, queue_default, queue_crawler)
+rabbitmq = RabbitmqParam(host=env.RABBITMQ_HOST)
+queue_default = rabbitmq.consumer(queue_name="default")
+queue_crawler = rabbitmq.consumer(queue_name="crawler", auto_ack=True)
 
 
-async def start_consume():
-    """メッセージキューの購読を開始します。"""
-    queueing.start()
-
-
-async def stop_consume():
-    """メッセージキューの購読を終了します。"""
-    await queueing.stop()
+queueing = asy.supervise(queue_default, queue_crawler)
 
 
 from .database import get_db

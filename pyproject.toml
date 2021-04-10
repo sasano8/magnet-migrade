@@ -19,10 +19,10 @@ pandas = "^1.2.0"
 # pyjwt = "^2.0.0"
 tzlocal = "^2.1"
 Inflector = "^3.0.1"
-fastapi-utils = "^0.2.1"
 pika = "^1.1.0"
 python-multipart = "^0.0.5"
 asy = { path = "./vendor/asy"}
+asy-rabbitmq = {path = "vendor/asy_rabbitmq"}
 
 # security
 pyjwt = "^2.0.0"
