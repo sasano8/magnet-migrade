@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import time
 from typing import Any, List, Optional
@@ -6,9 +7,10 @@ from fastapi import Depends
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from ....commons import BaseModel
-from ..crud import crawlers
-from ..driverpool import get_driver
+from magnet.worker import queue_crawler
+
+from ..commons import BaseModel
+from ..driver import get_driver
 
 logger = logging.getLogger("google")
 
@@ -72,8 +74,8 @@ class CommonSchema(TaskCreate):
         self.summary = self.detail.summary
 
 
-@crawlers.append
-async def scrape_google(driver: str = Depends(get_driver), *, keyword: str):
+@queue_crawler.task
+async def scrape_google(driver=Depends(get_driver), *, keyword: str):
     # TODO: optionを追加する
     state = CommonSchema(crawler_name="google", keyword=keyword)  # 引数で受け入れること
     # state = input
@@ -98,7 +100,7 @@ async def scrape_google(driver: str = Depends(get_driver), *, keyword: str):
 
     while True:
 
-        time.sleep(3)
+        await asyncio.sleep(3)
 
         # googleが勝手に予測し、検索キーワードを変えることがある
         # その場合は、元の検索キーワードという通知領域が存在する　再現例：「グロープワープ」で検索
@@ -129,6 +131,7 @@ async def scrape_google(driver: str = Depends(get_driver), *, keyword: str):
         i = 0
 
         for el in list_div:
+            await asyncio.sleep(0)
 
             i += 1
             logger.debug(i)

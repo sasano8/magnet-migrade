@@ -3,7 +3,8 @@ import inspect
 import asyncio
 from pydantic import BaseModel, Extra
 
-class InterfaceDecorator():
+
+class InterfaceDecorator:
     def __new__(cls, *args, **kwargs):
 
         self = super().__new__(cls)
@@ -82,7 +83,7 @@ class InterfaceDecorator():
     def hook(self, target):
         """対象デコレート後に処理をフックする。"""
         pass
-    
+
     def init_target(self, target):
         pass
 
@@ -97,13 +98,17 @@ class FuncDecorator(InterfaceDecorator):
         """self.wrapperでラップされた関数を返す。"""
         if asyncio.iscoroutinefunction(func):
             if asyncio.iscoroutinefunction(self.wrapper):
+
                 @wraps(func)
                 async def wrapped(*args, **kwargs):
                     return await self.wrapper(func, *args, **kwargs)
+
             else:
+
                 @wraps(func)
                 async def wrapped(*args, **kwargs):
                     return self.wrapper(func, *args, **kwargs)
+
         else:
             # @wraps(func)
             # def wrapped(*args, **kwargs):
@@ -114,9 +119,11 @@ class FuncDecorator(InterfaceDecorator):
                 #     return await self.wrapper(func, *args, **kwargs)
                 raise Exception("asyncでない関数をasync関数でラップすることはライブラリの仕様上禁止しています。")
             else:
+
                 @wraps(func)
                 def wrapped(*args, **kwargs):
                     return self.wrapper(func, *args, **kwargs)
+
         # if inspect.ismethod(func):
         #     return wraps(func)(partial(self.wrapper, func))
         #
@@ -126,8 +133,3 @@ class FuncDecorator(InterfaceDecorator):
 
     def wrapper(self, func, *args, **kwargs):
         return func(*args, **kwargs)
-
-
-
-
-

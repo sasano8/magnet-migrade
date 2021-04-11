@@ -2,15 +2,27 @@
   // https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
+    // {
+    //   "name": "Python: debug app",
+    //   "type": "python",
+    //   "request": "launch",
+    //   "module": "magnet",
+    //   "args": [
+    //     "server",
+    //     "start",
+    //     "--reload"
+    //   ],
+    //   "justMyCode": false // 外部ライブラリ等もデバッグする
+    // },
     {
-      "name": "Python: debug app",
+      "name": "Python: uvicorn debug",
       "type": "python",
       "request": "launch",
-      "module": "magnet",
+      "module": "uvicorn",
       "args": [
-        "server",
-        "start",
-        "--reload"
+        "--reload",
+        "--port=8080",
+        "magnet.__main:app"
       ],
       "justMyCode": false // 外部ライブラリ等もデバッグする
     }

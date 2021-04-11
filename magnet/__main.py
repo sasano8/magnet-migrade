@@ -9,7 +9,6 @@ from fastapi.responses import HTMLResponse
 import pandemic
 
 from . import errors
-from .worker import workers
 
 logger = logging.getLogger(__name__)
 
@@ -83,17 +82,16 @@ async def exc_app(request, exc):
     return errors.handle_error(request, exc)
 
 
-from .worker import func
+from .worker import queueing
 
 
 @app.on_event("startup")
 async def startup_worker():
     """ワーカーを起動します"""
-    await workers.start()
+    await queueing.start()
 
 
 @app.on_event("shutdown")
 async def shutdown_worker():
     """ワーカーを終了します"""
-    await workers.stop()
-    # await supervisor.stop()
+    await queueing.stop()
