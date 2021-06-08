@@ -1,0 +1,17 @@
+.openapi-generator-ignore
+apis/DefaultApi.ts
+apis/index.ts
+index.ts
+models/CreateTradeBot.ts
+models/DummyCreate.ts
+models/DummyPatch.ts
+models/HTTPValidationError.ts
+models/Item.ts
+models/ModifyPassword.ts
+models/RegisterFirstAdmin.ts
+models/RegisterUser.ts
+models/Token.ts
+models/User.ts
+models/ValidationError.ts
+models/index.ts
+runtime.ts

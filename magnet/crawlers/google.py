@@ -3,14 +3,15 @@ import logging
 import time
 from typing import Any, List, Optional
 
+from bs4 import BeautifulSoup
 from fastapi import Depends
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from magnet.worker import queue_crawler
+from magnet.worker import queue_extract, queue_transform
 
 from ..commons import BaseModel
-from ..driver import get_driver
+from ..driver import WebDriver, get_driver
 
 logger = logging.getLogger("google")
 
@@ -74,8 +75,14 @@ class CommonSchema(TaskCreate):
         self.summary = self.detail.summary
 
 
-@queue_crawler.task
-async def scrape_google(driver=Depends(get_driver), *, keyword: str):
+@queue_extract.task
+async def scrape_google(
+    driver: WebDriver = Depends(get_driver),
+    *,
+    keyword: str,
+    options: set = set(),
+    excludes: set = set()
+):
     # TODO: optionを追加する
     state = CommonSchema(crawler_name="google", keyword=keyword)  # 引数で受け入れること
     # state = input
@@ -100,7 +107,7 @@ async def scrape_google(driver=Depends(get_driver), *, keyword: str):
 
     while True:
 
-        await asyncio.sleep(3)
+        await asyncio.sleep(0)
 
         # googleが勝手に予測し、検索キーワードを変えることがある
         # その場合は、元の検索キーワードという通知領域が存在する　再現例：「グロープワープ」で検索
@@ -128,53 +135,9 @@ async def scrape_google(driver=Depends(get_driver), *, keyword: str):
         if len(list_div) == 0:
             raise Exception("Not Found Selector -> #search div.g")
 
-        i = 0
-
-        for el in list_div:
-            await asyncio.sleep(0)
-
-            i += 1
-            logger.debug(i)
-
-            # stateからtargetとかを自動で設定する
-            # Metaからsource_groupとかを設定する
-            # item = self.item_model.create_and_relation_query(state, **self.get_meta_dic())
-            item = state.copy_summary()
-            detail = item.detail
-            # detail.url = el.find_elements_by_css_selector(".r > a")[0].get_attribute(
-            #     "href"
-            # )
-            # detail.title = el.find_elements_by_css_selector(".r > a > h3")[0].text
-            # detail.summary = el.find_elements_by_css_selector(".s > DIV > SPAN")[0].text
-
-            detail.url = el.find_elements_by_css_selector(".yuRUbf > a")[
-                0
-            ].get_attribute("href")
-            detail.title = el.find_elements_by_css_selector(".yuRUbf > a > h3")[0].text
-            detail.summary = el.find_elements_by_css_selector("SPAN.aCOpRe > SPAN")[
-                0
-            ].text
-
-            # detail = {}
-            # item.detail = {
-            #     self.crawler_name: detail
-            # }
-            # item.detail.url = item.url
-            # item.detail.title = item.title
-            # item.detail.summary = item.summary
-
-            # detail['url'] = item.url
-            # detail['title'] = item.title
-            # detail['summary'] = item.summary
-
-            # キャッシュがあればurlを取得しておく
-            # 2021/2 キャッシュは消滅した模様？
-            # elements = el.find_elements_by_css_selector(".action-menu-item > A")
-            # if len(elements) > 0:
-            #     detail.url_cache = elements[0].get_attribute("href")
-
-            # yield item
-            logger.info(item)
+        # javascriptレンダリング後のソースを取得
+        html = driver.find_element_by_tag_name("html").get_attribute("innerHTML")
+        scrape_google_row.delay(page=state.current_page_num, doc=html)
 
         # 次のページがあれば次のページへ
         try:
@@ -184,3 +147,21 @@ async def scrape_google(driver=Depends(get_driver), *, keyword: str):
             break
 
         next_page.click()
+
+
+@queue_transform.task
+async def scrape_google_row(*, page: int = 1, doc: str):
+    soup = BeautifulSoup(doc, "html.parser")
+    for index, el in enumerate(soup.select("#search div.g:not(.eejeod)")):
+        try:
+            result = {
+                "page": page,
+                "index": index,
+                "href": el.select_one(".yuRUbf > a")["href"],
+                "title": el.select_one(".yuRUbf > a > h3").text,
+                "summary": el.select_one("SPAN.aCOpRe > SPAN").text,
+            }
+        except Exception as e:
+            raise
+
+        logger.info(result)

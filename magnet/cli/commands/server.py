@@ -16,6 +16,14 @@ def start(
     import uvicorn
 
     from magnet import ENTRYPOINT_ASGI
+    from magnet.config import ModeConfigCreate
+
+    if ModeConfigCreate().MODE == "DEBUG":
+        """
+        supervisorによりサーバーが自動起動するが、DEBUG時はサーバーを直接起動せず、IDE等からプロセスを起動することを想定する。
+        サーバーが二重起動すると、メッセージキュー処理が勝手に並列になったり、面倒事が生じるため
+        """
+        return
 
     if not isinstance(ENTRYPOINT_ASGI, str):
         raise Exception("直接アプリケーションの参照を渡さないでください。プログラムが更新されても、リロードが反映されなくなります。")

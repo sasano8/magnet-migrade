@@ -8,6 +8,7 @@ import os
 
 from selenium import webdriver
 from selenium.webdriver import DesiredCapabilities
+from selenium.webdriver import Remote as WebDriver
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +36,7 @@ def create_driver():
     return driver
 
 
-def get_driver():
+def get_driver() -> webdriver.Remote:
     try:
         driver = create_driver()
         yield driver

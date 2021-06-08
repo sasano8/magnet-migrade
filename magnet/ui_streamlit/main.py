@@ -2,6 +2,7 @@ import time
 
 import numpy as np
 import pandas as pd
+import requests
 import streamlit as st
 
 """
@@ -66,6 +67,24 @@ if pressed:
 
 expander = st.beta_expander("FAQ")
 expander.write("Here you could put in some really, really long explanations...")
+
+
+@st.cache
+def get_covid_df(url):
+    response_json = requests.get(url).json()
+    df = pd.DataFrame(response_json["data"])
+    return df
+
+
+url = "https://raw.githubusercontent.com/tokyo-metropolitan-gov/covid19/development/data/daily_positive_detail.json"
+df_covid = get_covid_df(url)
+
+"""
+# 東京都のCOVID-19感染者数
+東京都 新型コロナウイルス感染症対策サイトの[Github](https://github.com/tokyo-metropolitan-gov/covid19)からデータを取得
+"""
+
+st.write(df_covid)
 
 
 "Starting a long computation..."

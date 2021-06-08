@@ -1,7 +1,6 @@
 import logging
 
 from fastapi.middleware.gzip import GZipMiddleware
-
 # from magnet.core import middlewares
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import HTMLResponse
@@ -51,7 +50,6 @@ async def root():
 @setup
 def add_routers():
     import magnet.domain.crawlers.views
-    import magnet.domain.develop.views
     import magnet.domain.scaffold.views
     import magnet.domain.system.views
     import magnet.domain.trade.views
@@ -64,7 +62,6 @@ def add_routers():
     app.include_router(magnet.domain.trade.views.router, prefix="/bot")
     app.include_router(magnet.domain.crawlers.views.router, prefix="/crawlers")
     app.include_router(magnet.domain.scaffold.views.router, prefix="/scaffold")
-    app.include_router(magnet.domain.develop.views.router, prefix="/develop")
     app.include_router(magnet.domain.system.views.router, prefix="/system")
 
 

@@ -1,0 +1,19 @@
+{
+  // ESLintに対応しているファイルは保存時にESLintによるフォーマットを行う
+  // "editor.formatOnSave": true,
+  // "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "javascript.format.enable": false,
+  "typescript.format.enable": false,
+  "vetur.format.enable": false,
+  // "prettier.eslintIntegration": true,
+  // "eslint.options": {
+  //   "configFile": "./.eslintrc.js"
+  // },
+  "emeraldwalk.runonsave": {
+    "commands": [
+      {
+        "cmd": "yarn run prettier --write ${file}"
+      }
+    ]
+  }
+}

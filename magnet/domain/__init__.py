@@ -28,4 +28,4 @@ def todo():
     # vendors.py
     # logging.py
 
-    # 　TODO: まとめな場所へ移動 from libs import generator
+

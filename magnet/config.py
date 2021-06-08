@@ -31,6 +31,10 @@ class EnvBase(BaseSettings):
         env_file = ".env"  # .envを読み込む
 
 
+class ModeConfigCreate(EnvBase):
+    MODE: Literal["DEBUG"] = "DEBUG"
+
+
 class ContainerConfigCreate(EnvBase):
     CONTAINER_USER_ID: int = Field(
         1000, description="コンテナにログインするユーザーのユーザーID。変更後はコンテナを再ビルドしてください。"
@@ -134,6 +138,7 @@ class LineChannelConfigCreate(EnvBase):
 
 config_create_mixins = reversed(
     [
+        ModeConfigCreate,
         ContainerConfigCreate,
         DatabaseConfigCreate,
         RabbitmqConfigCreate,
@@ -151,6 +156,7 @@ class AllConfigCreate(*config_create_mixins):
     pass
 
 
+ModeConfig = ModeConfigCreate.prefab(name="ModeConfig", requires=...)
 ContainerConfig = ContainerConfigCreate.prefab(name="ContainerConfig", requires=...)
 DatabaseConfig = DatabaseConfigCreate.prefab(name="DatabaseConfig", requires=...)
 RabbitmqConfig = RabbitmqConfigCreate.prefab(name="RabbitmqConfig", requires=...)
@@ -164,6 +170,7 @@ LineChannelConfig = LineChannelConfigCreate.prefab(name="LineChannelConfig")
 
 
 class AllConfig(
+    ModeConfig,
     LineChannelConfig,
     APICredentialBybit,
     APICredentialBinance,
